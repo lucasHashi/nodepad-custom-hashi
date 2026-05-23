@@ -45,7 +45,9 @@ Open [localhost:3000](http://localhost:3000).
 
 ## Providers & Models
 
-Select provider and model from the sidebar Settings panel. Each provider remembers its key independently — switching providers and back restores your key.
+Select provider and model from the sidebar Settings panel. Each provider remembers its key independently — switching providers and back restores your key. Once a key is entered, the model picker fetches all models available on your account and lets you search and select any of them — not just the presets listed below.
+
+**Custom base URL**: override the provider endpoint in Settings to use local or self-hosted models (Ollama, LM Studio, vLLM, or any OpenAI-compatible API).
 
 ### OpenRouter *(default)*
 Access to all major models through a single key. Create a free account at [openrouter.ai](https://openrouter.ai) — use the free-tier models below with no credits, or add credits for GPT-4o, Claude, and Gemini.
