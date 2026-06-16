@@ -2,9 +2,9 @@
 
 **A design experiment in spatial, AI-augmented thinking.**
 
-[![Watch the intro](https://img.youtube.com/vi/nCLY7rHAjWE/maxresdefault.jpg)](https://www.youtube.com/watch?v=nCLY7rHAjWE)
+[![Watch the intro](https://img.youtube.com/vi/jZu4sgZOOO4/maxresdefault.jpg)](https://www.youtube.com/watch?v=jZu4sgZOOO4)
 
-*[Watch the intro →](https://www.youtube.com/watch?v=nCLY7rHAjWE)*
+*[Watch the intro →](https://www.youtube.com/watch?v=jZu4sgZOOO4)*
 
 ---
 

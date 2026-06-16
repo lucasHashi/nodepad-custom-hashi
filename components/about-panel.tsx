@@ -155,7 +155,7 @@ export function AboutPanel({ open, onClose }: AboutPanelProps) {
             <div className="relative w-full rounded-sm overflow-hidden border border-border/50" style={{ paddingBottom: "56.25%" }}>
               <iframe
                 className="absolute inset-0 w-full h-full"
-                src="https://www.youtube-nocookie.com/embed/nCLY7rHAjWE?rel=0&modestbranding=1&color=white"
+                src="https://www.youtube-nocookie.com/embed/jZu4sgZOOO4?rel=0&modestbranding=1&color=white"
                 title="nodepad introduction"
                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                 allowFullScreen
