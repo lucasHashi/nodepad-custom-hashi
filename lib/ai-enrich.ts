@@ -411,78 +411,115 @@ You MUST respond with a single JSON object (no markdown, no explanation). Schema
   const MAX_ENRICH_OUTPUT_TOKENS = 1200
 
   const baseUrl = getBaseUrl(config)
-  const response = await fetch(`${baseUrl}/chat/completions`, {
-    method: "POST",
-    headers: getProviderHeaders(config),
-    body: JSON.stringify({
-      model,
-      max_tokens: MAX_ENRICH_OUTPUT_TOKENS,
-      messages: [
-        { role: "system", content: systemPrompt },
-        { role: "user",   content: userMessage },
-      ],
-      // OpenAI search-preview models reject both response_format AND temperature;
-      // when web_search_options is present, omit both and rely on the schemaHint
-      // in the system prompt to get structured JSON output.
-      ...(webSearchOptions === undefined
-        ? {
-            response_format: useStrictSchema
-              ? { type: "json_schema", json_schema: JSON_SCHEMA }
-              : { type: "json_object" },
-            temperature: 0.1,
-          }
-        : { web_search_options: webSearchOptions }),
-    }),
-  })
+  const maxAttempts = 3
+  let lastError: Error | null = null
 
-  if (!response.ok) {
-    throw new Error(await parseProviderError(response))
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    try {
+      const response = await fetch(`${baseUrl}/chat/completions`, {
+        method: "POST",
+        headers: getProviderHeaders(config),
+        body: JSON.stringify({
+          model,
+          max_tokens: MAX_ENRICH_OUTPUT_TOKENS,
+          messages: [
+            { role: "system", content: systemPrompt },
+            { role: "user",   content: userMessage },
+          ],
+          // OpenAI search-preview models reject both response_format AND temperature;
+          // when web_search_options is present, omit both and rely on the schemaHint
+          // in the system prompt to get structured JSON output.
+          ...(webSearchOptions === undefined
+            ? {
+                response_format: useStrictSchema
+                  ? { type: "json_schema", json_schema: JSON_SCHEMA }
+                  : { type: "json_object" },
+                temperature: 0.1,
+              }
+            : { web_search_options: webSearchOptions }),
+        }),
+      })
+
+      if (!response.ok) {
+        throw new Error(await parseProviderError(response))
+      }
+
+      let data: Record<string, unknown>
+      try {
+        data = await response.json()
+      } catch {
+        throw new Error(
+          `AI enrich error (${config.provider}): response was not valid JSON. The provider may have timed out or returned a truncated response.`
+        )
+      }
+
+      const finishReason = (data.choices as Array<{ finish_reason?: string }>)?.[0]?.finish_reason
+
+      if (config.provider === "openrouter" && finishReason === "length") {
+        if (attempt < maxAttempts) {
+          console.warn(`OpenRouter response was cut off due to length limit (attempt ${attempt}/${maxAttempts}). Retrying...`)
+          continue
+        } else {
+          throw new Error("OpenRouter response was cut off due to length limit after 3 attempts.")
+        }
+      }
+
+      const content = (data.choices as Array<{ message?: { content?: string } }>)?.[0]?.message?.content
+      if (!content) {
+        if (config.provider === "openrouter" && attempt < maxAttempts) {
+          console.warn(`OpenRouter returned empty content (attempt ${attempt}/${maxAttempts}). Retrying...`)
+          continue
+        }
+        throw new Error("No content in AI response")
+      }
+
+      const result = parseEnrichResult(content)
+      if (!result) {
+        if (config.provider === "openrouter" && attempt < maxAttempts) {
+          console.warn(`OpenRouter returned invalid JSON (attempt ${attempt}/${maxAttempts}). Retrying...`)
+          continue
+        }
+        throw new Error(
+          `AI returned unparseable JSON.${finishReason ? ` Finish reason: ${finishReason}.` : ""} Raw: ${content.substring(0, 200)}`
+        )
+      }
+      if (result.confidence != null) {
+        result.confidence = Math.min(100, Math.max(0, Math.round(result.confidence)))
+      }
+
+      // Extract clickable source links from response annotations.
+      // Both OpenRouter :online and OpenAI search-preview return citations as
+      // annotations on the message object — not inside the JSON content itself.
+      const annotations: Array<{ type: string; url_citation?: { url: string; title?: string } }> =
+        ((data.choices as Array<{ message?: { annotations?: unknown[] } }>)?.[0]?.message?.annotations ?? []) as Array<{ type: string; url_citation?: { url: string; title?: string } }>
+      const seen = new Set<string>()
+      const sources = annotations
+        .filter(a => a.type === "url_citation" && a.url_citation?.url)
+        .map(a => {
+          const { url, title } = a.url_citation!
+          let siteName = ""
+          try { siteName = new URL(url).hostname.replace(/^www\./, "") } catch { /* ignore */ }
+          return { url, title: title || siteName, siteName }
+        })
+        .filter(s => {
+          if (seen.has(s.url)) return false
+          seen.add(s.url)
+          return true
+        })
+
+      if (sources.length > 0) result.sources = sources
+
+      return result
+
+    } catch (error: any) {
+      if (config.provider === "openrouter" && (error.message?.includes("length limit") || error.message?.includes("unparseable JSON") || error.message?.includes("No content in AI response"))) {
+        throw error
+      }
+      // If we got a network or parser error, do we retry or throw?
+      // Since the request only mentions retrying when "Finish Reason" is "length", let's throw immediately.
+      throw error
+    }
   }
 
-  let data: Record<string, unknown>
-  try {
-    data = await response.json()
-  } catch {
-    throw new Error(
-      `AI enrich error (${config.provider}): response was not valid JSON. The provider may have timed out or returned a truncated response.`
-    )
-  }
-
-  const content = (data.choices as Array<{ message?: { content?: string } }>)?.[0]?.message?.content
-  if (!content) throw new Error("No content in AI response")
-
-  const result = parseEnrichResult(content)
-  if (!result) {
-    const finishReason = (data.choices as Array<{ finish_reason?: string }>)?.[0]?.finish_reason
-    throw new Error(
-      `AI returned unparseable JSON.${finishReason ? ` Finish reason: ${finishReason}.` : ""} Raw: ${content.substring(0, 200)}`
-    )
-  }
-  if (result.confidence != null) {
-    result.confidence = Math.min(100, Math.max(0, Math.round(result.confidence)))
-  }
-
-  // Extract clickable source links from response annotations.
-  // Both OpenRouter :online and OpenAI search-preview return citations as
-  // annotations on the message object — not inside the JSON content itself.
-  const annotations: Array<{ type: string; url_citation?: { url: string; title?: string } }> =
-    ((data.choices as Array<{ message?: { annotations?: unknown[] } }>)?.[0]?.message?.annotations ?? []) as Array<{ type: string; url_citation?: { url: string; title?: string } }>
-  const seen = new Set<string>()
-  const sources = annotations
-    .filter(a => a.type === "url_citation" && a.url_citation?.url)
-    .map(a => {
-      const { url, title } = a.url_citation!
-      let siteName = ""
-      try { siteName = new URL(url).hostname.replace(/^www\./, "") } catch { /* ignore */ }
-      return { url, title: title || siteName, siteName }
-    })
-    .filter(s => {
-      if (seen.has(s.url)) return false
-      seen.add(s.url)
-      return true
-    })
-
-  if (sources.length > 0) result.sources = sources
-
-  return result
+  throw lastError || new Error("Failed to enrich block after 3 attempts.")
 }

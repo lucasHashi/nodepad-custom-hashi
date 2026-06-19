@@ -85,42 +85,79 @@ Return ONLY valid JSON:
   const MAX_GHOST_OUTPUT_TOKENS = 220
 
   const baseUrl = getBaseUrl(config)
-  const response = await fetch(`${baseUrl}/chat/completions`, {
-    method: "POST",
-    headers: getProviderHeaders(config),
-    body: JSON.stringify({
-      model,
-      max_tokens: MAX_GHOST_OUTPUT_TOKENS,
-      messages: [{ role: "user", content: prompt }],
-      response_format: { type: "json_object" },
-      temperature: 0.7,
-    }),
-  })
+  const maxAttempts = 3
+  let lastError: Error | null = null
 
-  if (!response.ok) {
-    throw new Error(await parseProviderError(response))
-  }
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    try {
+      const response = await fetch(`${baseUrl}/chat/completions`, {
+        method: "POST",
+        headers: getProviderHeaders(config),
+        body: JSON.stringify({
+          model,
+          max_tokens: MAX_GHOST_OUTPUT_TOKENS,
+          messages: [{ role: "user", content: prompt }],
+          response_format: { type: "json_object" },
+          temperature: 0.7,
+        }),
+      })
 
-  let data: Record<string, unknown>
-  try {
-    data = await response.json()
-  } catch {
-    throw new Error(
-      `AI ghost error (${config.provider}): response was not valid JSON. The provider may have timed out or returned a truncated response.`
-    )
-  }
-  const rawContent = (data.choices as Array<{ message?: { content?: string } }>)?.[0]?.message?.content
-  if (!rawContent) throw new Error("No content in AI response")
+      if (!response.ok) {
+        throw new Error(await parseProviderError(response))
+      }
 
-  // Defensive parse
-  try {
-    return JSON.parse(rawContent) as GhostResult
-  } catch {
-    const textMatch = rawContent.match(/"text":\s*"(.*?)"/)
-    const catMatch  = rawContent.match(/"category":\s*"(.*?)"/)
-    if (textMatch) {
-      return { text: textMatch[1], category: catMatch ? catMatch[1] : "thesis" }
+      let data: Record<string, unknown>
+      try {
+        data = await response.json()
+      } catch {
+        throw new Error(
+          `AI ghost error (${config.provider}): response was not valid JSON. The provider may have timed out or returned a truncated response.`
+        )
+      }
+
+      const finishReason = (data.choices as Array<{ finish_reason?: string }>)?.[0]?.finish_reason
+
+      if (config.provider === "openrouter" && finishReason === "length") {
+        if (attempt < maxAttempts) {
+          console.warn(`OpenRouter ghost response was cut off due to length limit (attempt ${attempt}/${maxAttempts}). Retrying...`)
+          continue
+        } else {
+          throw new Error("OpenRouter ghost response was cut off due to length limit after 3 attempts.")
+        }
+      }
+
+      const rawContent = (data.choices as Array<{ message?: { content?: string } }>)?.[0]?.message?.content
+      if (!rawContent) {
+        if (config.provider === "openrouter" && attempt < maxAttempts) {
+          console.warn(`OpenRouter ghost response returned empty content (attempt ${attempt}/${maxAttempts}). Retrying...`)
+          continue
+        }
+        throw new Error("No content in AI response")
+      }
+
+      // Defensive parse
+      try {
+        return JSON.parse(rawContent) as GhostResult
+      } catch {
+        const textMatch = rawContent.match(/"text":\s*"(.*?)"/)
+        const catMatch  = rawContent.match(/"category":\s*"(.*?)"/)
+        if (textMatch) {
+          return { text: textMatch[1], category: catMatch ? catMatch[1] : "thesis" }
+        }
+        if (config.provider === "openrouter" && attempt < maxAttempts) {
+          console.warn(`OpenRouter ghost response returned invalid JSON (attempt ${attempt}/${maxAttempts}). Retrying...`)
+          continue
+        }
+        throw new Error("Could not parse ghost response")
+      }
+
+    } catch (error: any) {
+      if (config.provider === "openrouter" && (error.message?.includes("length limit") || error.message?.includes("Could not parse ghost response") || error.message?.includes("No content in AI response"))) {
+        throw error
+      }
+      throw error
     }
-    throw new Error("Could not parse ghost response")
   }
+
+  throw lastError || new Error("Failed to generate ghost note after 3 attempts.")
 }
