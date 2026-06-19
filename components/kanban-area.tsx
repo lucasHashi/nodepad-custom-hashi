@@ -7,6 +7,8 @@ import { Sparkles, CheckSquare, Clock } from "lucide-react"
 import { CONTENT_TYPE_CONFIG, type ContentType } from "@/lib/content-types"
 import { getRelatedIds, useModKey } from "@/lib/utils"
 import { KanbanMinimap } from "./kanban-minimap"
+import { translations } from "@/lib/translations"
+
 
 interface KanbanAreaProps {
   blocks: TextBlock[]
@@ -24,6 +26,7 @@ interface KanbanAreaProps {
   activeWorkspaceId?: string
   onMoveToWorkspace?: (blockId: string, targetWorkspaceId: string) => void
   onCopyToWorkspace?: (blockId: string, targetWorkspaceId: string) => void
+  language?: "en" | "pt-BR"
 }
 
 export function KanbanArea({
@@ -42,10 +45,12 @@ export function KanbanArea({
   activeWorkspaceId,
   onMoveToWorkspace,
   onCopyToWorkspace,
+  language,
 }: KanbanAreaProps) {
   const mod = useModKey()
   const [hoveredConnectionId, setHoveredConnectionId] = useState<string | null>(null)
   const [lockedConnectionId, setLockedConnectionId] = useState<string | null>(null)
+  const t = translations[language || "en"]
 
   const activeConnectionId = lockedConnectionId ?? hoveredConnectionId
 
@@ -65,9 +70,9 @@ export function KanbanArea({
   // Group blocks into columns by ContentType
   const columns = useMemo(() => {
     const cols: Record<string, { title: string; icon: any; blocks: TextBlock[] }> = {
-      processing: { title: "Enriching", icon: Clock, blocks: [] },
-      task: { title: "Tasks", icon: CheckSquare, blocks: [] },
-      thesis: { title: "Thesis", icon: Sparkles, blocks: [] }
+      processing: { title: t.colEnriching, icon: Clock, blocks: [] },
+      task: { title: t.colTasks, icon: CheckSquare, blocks: [] },
+      thesis: { title: t.colThesis, icon: Sparkles, blocks: [] }
     }
 
     blocks.forEach(block => {
@@ -77,7 +82,8 @@ export function KanbanArea({
         const type = block.contentType || "general"
         if (!cols[type]) {
           const config = CONTENT_TYPE_CONFIG[type as ContentType] || CONTENT_TYPE_CONFIG.general
-          cols[type] = { title: config.label, icon: config.icon, blocks: [] }
+          const translatedTitle = t[`type${type.charAt(0).toUpperCase() + type.slice(1)}` as keyof typeof t] || config.label
+          cols[type] = { title: translatedTitle, icon: config.icon, blocks: [] }
         }
         cols[type].blocks.push(block)
       }
@@ -95,7 +101,7 @@ export function KanbanArea({
         if (idxB !== -1) return 1
         return keyA.localeCompare(keyB)
       })
-  }, [blocks])
+  }, [blocks, t])
 
   const containerRef = useRef<HTMLDivElement>(null)
 
@@ -116,7 +122,7 @@ export function KanbanArea({
   }, [columns])
 
   return (
-    <div className="relative h-full w-full bg-[#050505] overflow-hidden">
+    <div className="relative h-full w-full bg-background overflow-hidden">
       {/* Scrollable Container */}
       <div 
         ref={containerRef}
@@ -174,6 +180,7 @@ export function KanbanArea({
                         activeWorkspaceId={activeWorkspaceId}
                         onMoveToWorkspace={onMoveToWorkspace}
                         onCopyToWorkspace={onCopyToWorkspace}
+                        language={language}
                       />
                     </div>
                   )
@@ -189,16 +196,16 @@ export function KanbanArea({
       {blocks.length === 0 && (
         <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
           <div className="flex flex-col items-center gap-8 w-[420px]">
-            <p className="font-mono text-[10px] uppercase tracking-[0.35em] text-foreground/35">type-grouped board view</p>
+            <p className="font-mono text-[10px] uppercase tracking-[0.35em] text-foreground/35">{t.typeGroupedBoard}</p>
 
             <div className="flex flex-col gap-5 w-full">
-              {([
-                { color: "var(--type-task)",     label: "task",     hint: "Review papers on distributed consensus" },
-                { color: "var(--type-claim)",    label: "claim",    hint: "Caffeine improves short-term recall by ~15%" },
-                { color: "var(--type-question)", label: "question", hint: "Does creativity require periods of solitude?" },
-                { color: "var(--type-idea)",     label: "idea",     hint: "What if collaboration refines, not generates, original thought?" },
-              ] as const).map(({ color, label, hint }) => (
-                <div key={label} className="flex items-start gap-4">
+              {[
+                { color: "var(--type-task)",     label: t.typeTask,     hint: t.promptTask },
+                { color: "var(--type-claim)",    label: t.typeClaim,    hint: t.promptClaim },
+                { color: "var(--type-question)", label: t.typeQuestion, hint: t.promptQuestionAlt },
+                { color: "var(--type-idea)",     label: t.typeIdea,     hint: t.promptIdea },
+              ].map(({ color, label, hint }) => (
+                <div key={color} className="flex items-start gap-4">
                   <div className="w-0.5 self-stretch rounded-full shrink-0 mt-0.5" style={{ background: color }} />
                   <div className="flex flex-col gap-1">
                     <span className="font-mono text-[10px] uppercase tracking-[0.2em]" style={{ color }}>{label}</span>
@@ -209,8 +216,8 @@ export function KanbanArea({
             </div>
 
 
-            <p className="text-[13px] text-white uppercase tracking-[0.15em] whitespace-nowrap">
-              {`type anything · #type to classify · ${mod}K for commands`}
+            <p className="text-[13px] text-foreground uppercase tracking-[0.15em] whitespace-nowrap">
+              {t.emptyHint.replace("{mod}", mod)}
             </p>
           </div>
         </div>

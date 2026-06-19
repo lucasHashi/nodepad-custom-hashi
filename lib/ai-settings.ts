@@ -234,12 +234,15 @@ export async function fetchModelsFromProvider(
   })
 }
 
+export type Language = "en" | "pt-BR"
+
 export interface AISettings {
   apiKey: string
   modelId: string
   webGrounding: boolean
   provider: AIProvider
   customBaseUrl: string
+  language: Language
   /** Per-provider key store so switching back to a provider restores its key */
   providerKeys?: Partial<Record<AIProvider, string>>
 }
@@ -248,14 +251,14 @@ const STORAGE_KEY = "nodepad-ai-settings"
 
 function loadSettings(): AISettings {
   if (typeof window === "undefined") {
-    return { apiKey: "", modelId: DEFAULT_MODEL_ID, webGrounding: false, provider: DEFAULT_PROVIDER, customBaseUrl: "" }
+    return { apiKey: "", modelId: DEFAULT_MODEL_ID, webGrounding: false, provider: DEFAULT_PROVIDER, customBaseUrl: "", language: "en" }
   }
   try {
     const raw = localStorage.getItem(STORAGE_KEY)
-    if (!raw) return { apiKey: "", modelId: DEFAULT_MODEL_ID, webGrounding: false, provider: DEFAULT_PROVIDER, customBaseUrl: "" }
-    return { apiKey: "", modelId: DEFAULT_MODEL_ID, webGrounding: false, provider: DEFAULT_PROVIDER, customBaseUrl: "", ...JSON.parse(raw) }
+    if (!raw) return { apiKey: "", modelId: DEFAULT_MODEL_ID, webGrounding: false, provider: DEFAULT_PROVIDER, customBaseUrl: "", language: "en" }
+    return { apiKey: "", modelId: DEFAULT_MODEL_ID, webGrounding: false, provider: DEFAULT_PROVIDER, customBaseUrl: "", language: "en", ...JSON.parse(raw) }
   } catch {
-    return { apiKey: "", modelId: DEFAULT_MODEL_ID, webGrounding: false, provider: DEFAULT_PROVIDER, customBaseUrl: "" }
+    return { apiKey: "", modelId: DEFAULT_MODEL_ID, webGrounding: false, provider: DEFAULT_PROVIDER, customBaseUrl: "", language: "en" }
   }
 }
 
@@ -267,16 +270,27 @@ export interface AIConfig {
   customBaseUrl: string
 }
 
+export function isModelMismatched(modelId: string, provider: AIProvider): boolean {
+  if (provider === "openrouter") {
+    return OPENAI_MODELS.some(m => m.id === modelId) || ZAI_MODELS.some(m => m.id === modelId)
+  }
+  if (provider === "openai") {
+    return AI_MODELS.some(m => m.id === modelId) || ZAI_MODELS.some(m => m.id === modelId)
+  }
+  if (provider === "zai") {
+    return AI_MODELS.some(m => m.id === modelId) || OPENAI_MODELS.some(m => m.id === modelId)
+  }
+  return false
+}
+
 export function loadAIConfig(): AIConfig | null {
   const s = loadSettings()
   if (!s.apiKey) return null
   const models = getModelsForProvider(s.provider)
   const model = models.find(m => m.id === s.modelId)
-  // Use the matched model's id if found; otherwise fall back to the first model
-  // for this provider.  This handles the case where localStorage still holds an
-  // OpenRouter-prefixed id (e.g. "openai/gpt-4o") after switching to OpenAI —
-  // that string won't match any entry in OPENAI_MODELS so we fall back to "gpt-4o".
-  const modelId = model?.id ?? models[0]?.id ?? s.modelId ?? DEFAULT_MODEL_ID
+  // Use the matched model's id if found; if mismatched from another provider's presets,
+  // fall back to the first model. Otherwise, allow the custom/alternative model ID.
+  const modelId = model?.id ?? (isModelMismatched(s.modelId, s.provider) ? (models[0]?.id ?? DEFAULT_MODEL_ID) : s.modelId)
   // Z.ai does not support grounding; only openrouter and openai do
   const supportsGrounding =
     (s.provider === "openrouter" || s.provider === "openai") &&
@@ -308,7 +322,17 @@ export function getAIHeaders(): Record<string, string> {
   const config = loadAIConfig()
   if (!config) return {}
   const models = getModelsForProvider(config.provider)
-  const model = models.find(m => m.id === config.modelId) || AI_MODELS.find(m => m.id === DEFAULT_MODEL_ID)!
+  const model = models.find(m => m.id === config.modelId) || (
+    isModelMismatched(config.modelId, config.provider)
+      ? models[0]
+      : {
+          id: config.modelId,
+          label: config.modelId,
+          shortLabel: config.modelId.split("/").pop() || config.modelId,
+          description: "Custom model",
+          supportsGrounding: false,
+        }
+  ) || AI_MODELS.find(m => m.id === DEFAULT_MODEL_ID)!
   return {
     "x-or-key": config.apiKey,
     "x-or-model": config.modelId,
@@ -323,7 +347,7 @@ export function useAISettings() {
   // modelLabel prop, etc.) between the server render and client hydration.
   const [settings, setSettings] = useState<AISettings>({
     apiKey: "", modelId: DEFAULT_MODEL_ID, webGrounding: false,
-    provider: DEFAULT_PROVIDER, customBaseUrl: "",
+    provider: DEFAULT_PROVIDER, customBaseUrl: "", language: "en",
   })
   const [isHydrated, setIsHydrated] = useState(false)
 
@@ -343,21 +367,30 @@ export function useAISettings() {
   const models = getModelsForProvider(settings.provider)
 
   const resolvedModelId = (() => {
-    const model = models.find(m => m.id === settings.modelId) || models[0]
-    if (!model) return settings.modelId
-    if (settings.provider === "openrouter" && settings.webGrounding && model.supportsGrounding) {
-      return `${model.id}:online`
+    const model = models.find(m => m.id === settings.modelId)
+    if (model) {
+      if (settings.provider === "openrouter" && settings.webGrounding && model.supportsGrounding) {
+        return `${model.id}:online`
+      }
+      return model.id
     }
-    return model.id
+    if (isModelMismatched(settings.modelId, settings.provider)) {
+      return models[0]?.id ?? settings.modelId
+    }
+    return settings.modelId
   })()
 
-  const currentModel: AIModel = models.find(m => m.id === settings.modelId) || models[0] || {
-    id: settings.modelId,
-    label: settings.modelId,
-    shortLabel: settings.modelId.split("/").pop() || settings.modelId,
-    description: "Custom model",
-    supportsGrounding: false,
-  }
+  const currentModel: AIModel = models.find(m => m.id === settings.modelId) || (
+    isModelMismatched(settings.modelId, settings.provider)
+      ? models[0]
+      : {
+          id: settings.modelId,
+          label: settings.modelId.split("/").pop() || settings.modelId,
+          shortLabel: settings.modelId.split("/").pop() || settings.modelId,
+          description: "Custom model",
+          supportsGrounding: false,
+        }
+  ) || models[0]
 
   return { settings, updateSettings, resolvedModelId, currentModel, models, isHydrated }
 }

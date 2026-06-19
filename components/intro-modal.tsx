@@ -3,14 +3,17 @@
 import { useEffect, useRef } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import { X } from "lucide-react"
+import { translations } from "@/lib/translations"
 
 interface IntroModalProps {
   open: boolean
   onClose: () => void
+  language?: "en" | "pt-BR"
 }
 
-export function IntroModal({ open, onClose }: IntroModalProps) {
+export function IntroModal({ open, onClose, language }: IntroModalProps) {
   const overlayRef = useRef<HTMLDivElement>(null)
+  const t = translations[language || "en"]
 
   // Close on Escape
   useEffect(() => {
@@ -44,7 +47,7 @@ export function IntroModal({ open, onClose }: IntroModalProps) {
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.96, y: 8 }}
             transition={{ duration: 0.25, ease: "easeOut" }}
-            className="relative w-full max-w-3xl bg-[#0d0d0d] border border-white/10 rounded-sm shadow-2xl overflow-hidden"
+            className="relative w-full max-w-3xl bg-card border border-border rounded-sm shadow-2xl overflow-hidden"
           >
             {/* Header */}
             <div className="flex items-center justify-between px-6 pt-6 pb-4">
@@ -58,12 +61,12 @@ export function IntroModal({ open, onClose }: IntroModalProps) {
                   <span className="font-mono text-sm font-black text-foreground tracking-tight">nodepad</span>
                 </div>
                 <p className="text-xs text-muted-foreground/60 font-mono uppercase tracking-widest">
-                  A quick introduction
+                  {t.introTitle}
                 </p>
               </div>
               <button
                 onClick={onClose}
-                className="p-1.5 rounded-sm text-muted-foreground/40 hover:text-foreground hover:bg-white/10 transition-colors"
+                className="p-1.5 rounded-sm text-muted-foreground/50 hover:text-foreground hover:bg-secondary/60 transition-colors"
                 aria-label="Close"
               >
                 <X className="h-4 w-4" />
@@ -82,15 +85,20 @@ export function IntroModal({ open, onClose }: IntroModalProps) {
             </div>
 
             {/* Footer */}
-            <div className="flex items-center justify-between px-6 py-4 border-t border-white/[0.06]">
+            <div className="flex items-center justify-between px-6 py-4 border-t border-border/40">
               <p className="text-xs text-muted-foreground/40">
-                You can replay this anytime via the <span className="font-mono font-black text-muted-foreground/60">?</span> button
+                {t.introFooter.split("?").map((part, i) => (
+                  <span key={i}>
+                    {part}
+                    {i === 0 && <span className="font-mono font-black text-muted-foreground/60">?</span>}
+                  </span>
+                ))}
               </p>
               <button
                 onClick={onClose}
-                className="px-4 py-1.5 text-xs font-mono font-medium rounded-sm bg-white/8 hover:bg-white/15 text-foreground/70 hover:text-foreground border border-white/10 hover:border-white/20 transition-all"
+                className="px-4 py-1.5 text-xs font-mono font-medium rounded-sm bg-secondary hover:bg-secondary/80 text-foreground/80 hover:text-foreground border border-border hover:border-border/80 transition-all"
               >
-                Skip to app →
+                {t.skipToApp}
               </button>
             </div>
           </motion.div>

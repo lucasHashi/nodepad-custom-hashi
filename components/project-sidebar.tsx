@@ -2,6 +2,8 @@
 
 import { useState, useRef, useEffect } from "react"
 import { motion, AnimatePresence } from "framer-motion"
+import { useTheme } from "next-themes"
+import { translations } from "@/lib/translations"
 import {
   Plus,
   Settings,
@@ -69,6 +71,14 @@ export function ProjectSidebar({
   openToSettings,
   onSettingsOpened,
 }: ProjectSidebarProps) {
+  const { theme, setTheme } = useTheme()
+  const [mounted, setMounted] = useState(false)
+  useEffect(() => {
+    setMounted(true)
+  }, [])
+
+  const t = translations[aiSettings.language || "en"]
+
   const [editingId, setEditingId] = useState<string | null>(null)
   const [editName, setEditName] = useState("")
   const [deletingId, setDeletingId] = useState<string | null>(null)
@@ -91,10 +101,10 @@ export function ProjectSidebar({
     }
   }, [editingId])
 
-  // Sync draft when panel opens
+  // Sync draft when panel opens or settings change
   useEffect(() => {
     if (showSettings) setDraft(aiSettings)
-  }, [showSettings])
+  }, [showSettings, aiSettings])
 
   // Jump straight to settings when requested externally
   useEffect(() => {
@@ -192,7 +202,7 @@ export function ProjectSidebar({
                 className="flex items-center gap-1.5 text-muted-foreground hover:text-foreground transition-colors"
               >
                 <ArrowLeft className="h-3.5 w-3.5" />
-                <span className="font-mono text-xs font-bold uppercase tracking-tight">Settings</span>
+                <span className="font-mono text-xs font-bold uppercase tracking-tight">{t.settings}</span>
               </button>
             ) : (
               <>
@@ -200,7 +210,7 @@ export function ProjectSidebar({
                   <LayoutGrid className="h-3.5 w-3.5 text-primary" />
                 </div>
                 <h2 className="font-mono text-xs font-bold uppercase tracking-tight text-foreground/80 select-none">
-                  Spaces
+                  {t.spaces}
                 </h2>
               </>
             )}
@@ -259,7 +269,7 @@ export function ProjectSidebar({
                           </span>
                         )}
                         <span className="font-mono text-[8px] text-muted-foreground uppercase tracking-tighter font-bold">
-                          {project.blocks.length} {project.blocks.length === 1 ? 'node' : 'nodes'}
+                          {project.blocks.length} {project.blocks.length === 1 ? t.nodeCount : t.nodesCount}
                         </span>
                       </button>
 
@@ -303,7 +313,7 @@ export function ProjectSidebar({
                           className="absolute inset-0 z-10 bg-destructive/95 backdrop-blur-md rounded-sm flex items-center justify-between px-3"
                         >
                           <span className="font-mono text-[8px] font-bold text-white uppercase tracking-tighter">
-                            Delete Space?
+                            {t.deleteSpaceConfirm}
                           </span>
                           <div className="flex items-center gap-1">
                             <button 
@@ -337,7 +347,7 @@ export function ProjectSidebar({
                 {/* Provider Selector */}
                 <div className="flex flex-col gap-2">
                   <label className="font-mono text-[9px] font-bold uppercase tracking-[0.2em] text-muted-foreground">
-                    Provider
+                    {t.provider}
                   </label>
                   <div className="relative">
                     <button
@@ -392,7 +402,7 @@ export function ProjectSidebar({
                 {/* API Key */}
                 <div className="flex flex-col gap-2">
                   <label className="font-mono text-[9px] font-bold uppercase tracking-[0.2em] text-muted-foreground">
-                    API Key
+                    {t.apiKey}
                   </label>
                   <div className="flex items-center gap-2 rounded-md border border-white/10 bg-white/[0.04] px-2.5 py-2 focus-within:border-primary/50 transition-colors">
                     <Key className="h-3 w-3 shrink-0 text-muted-foreground" />
@@ -411,11 +421,13 @@ export function ProjectSidebar({
                     </button>
                   </div>
                   <p className="font-mono text-[9px] text-muted-foreground leading-relaxed">
-                    Stored locally. Never sent to a server.{" "}
+                    {aiSettings.language === "pt-BR"
+                      ? "Armazenado localmente. Nunca enviado a um servidor."
+                      : "Stored locally. Never sent to a server."}{" "}
                     {currentPreset.keyUrl && (
                       <a href={currentPreset.keyUrl} target="_blank" rel="noopener noreferrer"
                         className="text-primary underline hover:brightness-125 transition-all">
-                        Get a key →
+                        {aiSettings.language === "pt-BR" ? "Obter uma chave →" : "Get a key →"}
                       </a>
                     )}
                   </p>
@@ -424,28 +436,30 @@ export function ProjectSidebar({
                 {/* Custom Base URL */}
                 <div className="flex flex-col gap-2">
                   <label className="font-mono text-[9px] font-bold uppercase tracking-[0.2em] text-muted-foreground">
-                    Custom Base URL
+                    {t.customBaseUrl}
                   </label>
                   <div className="flex items-center gap-2 rounded-md border border-white/10 bg-white/[0.04] px-2.5 py-2 focus-within:border-primary/50 transition-colors">
                     <input
                       type="text"
                       value={draft.customBaseUrl ?? ""}
                       onChange={e => setDraft(d => ({ ...d, customBaseUrl: e.target.value }))}
-                      placeholder="Optional — for local/self-hosted endpoints"
+                      placeholder={aiSettings.language === "pt-BR" ? "Opcional — para endpoints locais/auto-hospedados" : "Optional — for local/self-hosted endpoints"}
                       className="flex-1 bg-transparent font-mono text-[11px] text-foreground outline-none placeholder:text-muted-foreground/40"
                       autoComplete="off"
                       spellCheck={false}
                     />
                   </div>
                   <p className="font-mono text-[9px] text-muted-foreground leading-relaxed">
-                    Override the provider URL. Useful for Ollama, LM Studio, vLLM, or other OpenAI-compatible endpoints.
+                    {aiSettings.language === "pt-BR"
+                      ? "Substitui a URL do provedor. Útil para Ollama, LM Studio, vLLM ou outros endpoints compatíveis com OpenAI."
+                      : "Override the provider URL. Useful for Ollama, LM Studio, vLLM, or other OpenAI-compatible endpoints."}
                   </p>
                 </div>
 
                 {/* Model Selector */}
                 <div className="flex flex-col gap-2">
                   <label className="font-mono text-[9px] font-bold uppercase tracking-[0.2em] text-muted-foreground">
-                    Model
+                    {t.model}
                   </label>
                   {models.length === 0 ? (
                     <div className="flex items-center gap-2 rounded-md border border-white/10 bg-white/[0.04] px-2.5 py-2 focus-within:border-primary/50 transition-colors">
@@ -467,7 +481,7 @@ export function ProjectSidebar({
                       >
                         <div>
                           <div className="font-mono text-[11px] font-bold text-foreground">{selectedModel?.label ?? draft.modelId}</div>
-                          <div className="font-mono text-[9px] text-muted-foreground mt-0.5">{selectedModel?.description ?? "Custom model ID"}</div>
+                          <div className="font-mono text-[9px] text-muted-foreground mt-0.5">{selectedModel?.description ?? (aiSettings.language === "pt-BR" ? "ID de modelo personalizado" : "Custom model ID")}</div>
                         </div>
                         <ChevronDown className={`h-3 w-3 text-muted-foreground transition-transform ${modelOpen ? "rotate-180" : ""}`} />
                       </button>
@@ -487,7 +501,7 @@ export function ProjectSidebar({
                                 type="text"
                                 value={modelSearch}
                                 onChange={e => setModelSearch(e.target.value)}
-                                placeholder="Search models…"
+                                placeholder={aiSettings.language === "pt-BR" ? "Pesquisar modelos…" : "Search models…"}
                                 className="flex-1 bg-transparent font-sans text-xs text-foreground outline-none placeholder:text-muted-foreground/40"
                                 autoFocus
                                 spellCheck={false}
@@ -525,7 +539,7 @@ export function ProjectSidebar({
                                 <>
                                   <div className="px-2.5 py-1.5 border-t border-white/5">
                                     <span className="font-sans text-[8px] font-semibold uppercase tracking-widest text-muted-foreground/50">
-                                      All available models ({fetchedModels.length})
+                                      {aiSettings.language === "pt-BR" ? "Todos os modelos disponíveis" : "All available models"} ({fetchedModels.length})
                                     </span>
                                   </div>
                                   {fetchedModels
@@ -579,7 +593,7 @@ export function ProjectSidebar({
                               {fetchingModels && (
                                 <div className="px-2.5 py-2 flex items-center gap-2">
                                   <span className="h-2 w-2 rounded-full bg-primary animate-pulse" />
-                                  <span className="font-sans text-[9px] text-muted-foreground">Loading models…</span>
+                                  <span className="font-sans text-[9px] text-muted-foreground">{aiSettings.language === "pt-BR" ? "Carregando modelos…" : "Loading models…"}</span>
                                 </div>
                               )}
                               {fetchError && !fetchingModels && (
@@ -594,7 +608,7 @@ export function ProjectSidebar({
                                 return presetHits === 0 && fetchedHits === 0
                               })() && (
                                 <div className="px-2.5 py-2">
-                                  <span className="font-sans text-[9px] text-muted-foreground/50">No models match &ldquo;{modelSearch}&rdquo;</span>
+                                  <span className="font-sans text-[9px] text-muted-foreground/50">{aiSettings.language === "pt-BR" ? `Nenhum modelo corresponde a “${modelSearch}”` : `No models match “${modelSearch}”`}</span>
                                 </div>
                               )}
                             </div>
@@ -611,13 +625,13 @@ export function ProjectSidebar({
                     <div className="flex items-start gap-2">
                       <Globe className="h-3.5 w-3.5 mt-0.5 text-primary/60 shrink-0" />
                       <div>
-                        <div className="font-mono text-[11px] font-bold text-foreground">Web Grounding</div>
+                        <div className="font-mono text-[11px] font-bold text-foreground">{t.webGrounding}</div>
                         <div className="font-mono text-[9px] text-muted-foreground mt-0.5 leading-relaxed">
                           {selectedModel.supportsGrounding
                             ? draft.provider === "openai"
-                              ? `Uses ${selectedModel.groundingModelId ?? "search-preview"} for live web access`
-                              : "Adds :online for live search"
-                            : "Not available for this model"}
+                              ? (selectedModel.groundingModelId ? t.groundingOpenAI.replace("search-preview", selectedModel.groundingModelId) : t.groundingOpenAI)
+                              : t.groundingOnline
+                            : t.groundingUnavailable}
                         </div>
                       </div>
                     </div>
@@ -635,6 +649,59 @@ export function ProjectSidebar({
                   </div>
                 )}
 
+                {/* Language Selector */}
+                <div className="flex flex-col gap-2">
+                  <label className="font-mono text-[9px] font-bold uppercase tracking-[0.2em] text-muted-foreground">
+                    {t.language}
+                  </label>
+                  <div className="flex rounded-md border border-white/10 bg-white/[0.04] p-0.5 overflow-hidden">
+                    <button
+                      onClick={() => setDraft(d => ({ ...d, language: "en" }))}
+                      className={`flex-1 font-mono text-[10px] font-bold py-1.5 rounded transition-colors ${
+                        draft.language === "en"
+                          ? "bg-primary text-primary-foreground"
+                          : "text-muted-foreground hover:text-foreground"
+                      }`}
+                    >
+                      English
+                    </button>
+                    <button
+                      onClick={() => setDraft(d => ({ ...d, language: "pt-BR" }))}
+                      className={`flex-1 font-mono text-[10px] font-bold py-1.5 rounded transition-colors ${
+                        draft.language === "pt-BR"
+                          ? "bg-primary text-primary-foreground"
+                          : "text-muted-foreground hover:text-foreground"
+                      }`}
+                    >
+                      Português
+                    </button>
+                  </div>
+                </div>
+
+                {/* Theme Selector */}
+                {mounted && (
+                  <div className="flex items-start justify-between gap-3 rounded-md border border-white/5 bg-white/[0.02] px-2.5 py-2.5">
+                    <div className="flex items-start gap-2">
+                      <div>
+                        <div className="font-mono text-[11px] font-bold text-foreground">{t.theme}</div>
+                        <div className="font-mono text-[9px] text-muted-foreground mt-0.5 leading-relaxed">
+                          {t.lightThemeDesc}
+                        </div>
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => setTheme(theme === "light" ? "dark" : "light")}
+                      className={`relative shrink-0 h-5 w-9 rounded-full transition-all duration-200 ${
+                        theme === "light" ? "bg-primary" : "bg-white/10"
+                      }`}
+                    >
+                      <span className={`absolute top-0.5 h-4 w-4 rounded-full bg-white shadow transition-all duration-200 ${
+                        theme === "light" ? "left-5" : "left-0.5"
+                      }`} />
+                    </button>
+                  </div>
+                )}
+
                 {/* API Status */}
                 <div className={`flex items-center gap-2 rounded-md px-2.5 py-2 font-mono text-[9px] ${
                   draft.apiKey
@@ -642,7 +709,7 @@ export function ProjectSidebar({
                     : "bg-white/5 border border-white/5 text-muted-foreground"
                 }`}>
                   <span className={`h-1.5 w-1.5 rounded-full ${draft.apiKey ? "bg-primary animate-pulse" : "bg-white/30"}`} />
-                  {draft.apiKey ? `${currentPreset.label} — API key configured` : "No API key — AI disabled"}
+                  {draft.apiKey ? `${currentPreset.label} — ${t.apiConfigured}` : t.apiDisabled}
                 </div>
               </motion.div>
             )}
@@ -657,14 +724,14 @@ export function ProjectSidebar({
                 onClick={handleSaveSettings}
                 className="flex items-center justify-between w-full h-8 px-2.5 rounded-sm bg-primary hover:bg-primary/90 text-primary-foreground font-mono text-[9px] font-bold uppercase tracking-[0.1em] transition-all active:scale-[0.98] shadow-sm"
               >
-                <span>Save Settings</span>
+                <span>{t.saveSettings}</span>
                 <Save className="h-3.5 w-3.5" />
               </button>
               <button
                 onClick={() => setShowSettings(false)}
                 className="flex items-center justify-center w-full h-8 px-2.5 rounded-sm bg-white/5 hover:bg-white/10 text-muted-foreground font-mono text-[9px] font-bold uppercase tracking-[0.1em] transition-all active:scale-[0.98] border border-white/5"
               >
-                Cancel
+                {t.cancel}
               </button>
             </div>
           ) : (
@@ -673,7 +740,7 @@ export function ProjectSidebar({
                 onClick={onCreateProject}
                 className="flex items-center justify-between w-full h-8 px-2.5 rounded-sm bg-primary hover:bg-primary/90 text-primary-foreground font-mono text-[9px] font-bold uppercase tracking-[0.1em] transition-all active:scale-[0.98] shadow-sm"
               >
-                <span>New Space</span>
+                <span>{t.newSpace}</span>
                 <Plus className="h-3.5 w-3.5" />
               </button>
               <button
@@ -681,14 +748,14 @@ export function ProjectSidebar({
                 className="flex items-center justify-between w-full h-8 px-2.5 rounded-sm bg-white/5 hover:bg-white/10 text-muted-foreground hover:text-foreground font-mono text-[9px] font-bold uppercase tracking-[0.1em] transition-all active:scale-[0.98] border border-white/5"
                 title="Import a .nodepad file"
               >
-                <span>Import .nodepad</span>
+                <span>{t.importNodepad}</span>
                 <FolderInput className="h-3.5 w-3.5" />
               </button>
               <button
                 onClick={() => setShowSettings(true)}
                 className="flex items-center justify-between w-full h-8 px-2.5 rounded-sm bg-white/5 hover:bg-white/10 text-muted-foreground hover:text-foreground font-mono text-[9px] font-bold uppercase tracking-[0.1em] transition-all active:scale-[0.98] border border-white/5"
               >
-                <span>Settings</span>
+                <span>{t.settings}</span>
                 <Settings className="h-3.5 w-3.5" />
               </button>
             </div>

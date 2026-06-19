@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import { Geist, Geist_Mono, Vazirmatn } from 'next/font/google'
 import Script from 'next/script'
 import { MobileWall } from '@/components/mobile-wall'
+import { ThemeProvider } from '@/components/theme-provider'
 import './globals.css'
 
 const _geist = Geist({ subsets: ["latin"] });
@@ -42,8 +43,10 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={`font-sans antialiased ${vazirmatn.variable}`} suppressHydrationWarning>
-        <MobileWall />
-        {children}
+        <ThemeProvider attribute="class" defaultTheme="dark" enableSystem={false}>
+          <MobileWall />
+          {children}
+        </ThemeProvider>
         {/* Umami analytics — nodepad.space only. Remove or replace with your
             own data-website-id if self-hosting. Safe to delete entirely. */}
         <Script

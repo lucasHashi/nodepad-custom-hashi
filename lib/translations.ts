@@ -1,0 +1,310 @@
+export type Language = "en" | "pt-BR"
+
+export const translations = {
+  en: {
+    // Project Sidebar
+    spaces: "Spaces",
+    settings: "Settings",
+    provider: "Provider",
+    apiKey: "API Key",
+    customBaseUrl: "Custom Base URL",
+    model: "Model",
+    webGrounding: "Web Grounding",
+    groundingOpenAI: "Uses search-preview for live web access",
+    groundingOnline: "Adds :online for live search",
+    groundingUnavailable: "Not available for this model",
+    theme: "Theme",
+    lightTheme: "Light Theme",
+    lightThemeDesc: "Switch between light and dark modes",
+    language: "Language",
+    apiConfigured: "API key configured",
+    apiDisabled: "No API key — AI disabled",
+    saveSettings: "Save Settings",
+    cancel: "Cancel",
+    newSpace: "New Space",
+    importNodepad: "Import .nodepad",
+    deleteSpaceConfirm: "Delete Space?",
+    nodesCount: "nodes",
+    nodeCount: "node",
+
+    // Status Bar
+    processing: "processing...",
+    contextualizing: "contextualizing...",
+    failed: "failed",
+    synthesisPanel: "Synthesis Panel",
+    workspaceIndex: "Workspace Index",
+    aboutNodepad: "About nodepad",
+    helpTooltip: "Find help & the intro video here anytime",
+
+    // Vim Input & Command Palette
+    entry: "Entry",
+    capturePlaceholder: "Capture something...",
+    undo: "Undo",
+    commands: "Commands",
+    submit: "Submit",
+    views: "Views",
+    navigate: "Navigate",
+    actions: "Actions",
+    noCommandsMatch: "No commands match",
+    clear: "clear",
+    searchCommands: "Search commands...",
+    
+    // Command Palette Items
+    cmdTiling: "Tiling",
+    cmdKanban: "Kanban",
+    cmdGraph: "Graph",
+    cmdProjects: "Projects",
+    cmdNewProject: "New Project",
+    cmdIndex: "Index",
+    cmdSynthesis: "Synthesis",
+    cmdExportNodepad: "Export",
+    cmdImportNodepad: "Import",
+    cmdExportMarkdown: "Export",
+    cmdCopyMarkdown: "Copy",
+    cmdClearCanvas: "Clear",
+    
+    // Keyboard hints
+    kbdRows: "rows",
+    kbdTiles: "tiles",
+    kbdSelect: "select",
+    kbdClose: "close",
+
+    // Tile Index
+    boardIndex: "Board Index",
+    canvasIndex: "Canvas Index",
+    columns: "Columns",
+    emptyNote: "Empty note",
+
+    // Ghost Panel (Synthesis)
+    synthesisTitle: "Synthesis",
+    emergentTheses: "Emergent theses\nwill appear here",
+    synthesizing: "Synthesizing...",
+    addToCanvas: "Add to canvas",
+    writingPatternsHint: "Generated from your writing patterns",
+
+    // Intro Modal
+    introTitle: "A quick introduction",
+    skipToApp: "Skip to app →",
+    introFooter: "You can replay this anytime via the ? button",
+
+    // Empty States
+    spatialWorkspace: "spatial research workspace",
+    typeGroupedBoard: "type-grouped board view",
+    forceDirectedGraph: "force-directed graph view",
+    emptyHint: "type anything · #type to classify · {mod}K for commands",
+    
+    // Empty State Prompts
+    promptQuestion: "Does consciousness require a period of genuine solitude?",
+    promptQuestionAlt: "Does creativity require periods of solitude?",
+    promptClaim: "Caffeine improves short-term recall by ~15%",
+    promptQuote: "Attention is the rarest form of generosity — Simone Weil",
+    promptTask: "Review papers on distributed consensus",
+    promptIdea: "What if collaboration refines, not generates, original thought?",
+    promptIdeaAlt: "Collaboration refines ideas, solitude generates them",
+    promptEntity: "Adam Grant — organisational psychologist",
+
+    // Warnings & Banners
+    apiKeyWarning: "⚡ AI enrichment requires an OpenRouter API key — use a free model (no credits needed) or add credits for GPT-4o, Claude, and more. Configure in the ☰ left panel.",
+    addApiKey: "Add API key →",
+    getFreeKey: "Get a free key ↗",
+
+    // Content Types
+    typeEntity: "Entity",
+    typeClaim: "Claim",
+    typeQuestion: "Question",
+    typeTask: "Task",
+    typeIdea: "Idea",
+    typeReference: "Reference",
+    typeQuote: "Quote",
+    typeDefinition: "Definition",
+    typeOpinion: "Opinion",
+    typeReflection: "Reflection",
+    typeNarrative: "Narrative",
+    typeComparison: "Comparison",
+    typeGeneral: "Note",
+    typeThesis: "Thesis",
+
+    // Column Headers
+    colEnriching: "Enriching",
+    colTasks: "Tasks",
+    colThesis: "Thesis",
+
+    // Tile Card & Graph Detail
+    notRelated: "Not related to topic",
+    retryClick: "Double-click to retry.",
+    retryKey: "AI enrichment failed — no API key. Open the ☰ sidebar → Settings to add your API key.",
+    retryGeneric: "Enrichment failed. Double-click to retry.",
+    confidence: "Confidence",
+    noTopic: "no-topic",
+    connectedNodes: "Connected nodes",
+    linkText: "Link",
+    linksText: "Links",
+    more: "more",
+    changeType: "Change type",
+    moveToSpace: "Move or copy to space",
+    moveBtn: "Move",
+    copyBtn: "Copy",
+    noOtherSpaces: "No other spaces — create one first.",
+    doubleClickEdit: "Double-click to edit",
+    selectNodeToInspect: "Select a node to inspect",
+    refreshThesis: "Refresh thesis synthesis",
+    unpin: "Unpin note",
+    pin: "Pin note",
+    deleteNote: "Delete note",
+    saveEditHint: "Enter ↵ save · Shift+Enter newline · Esc cancel",
+    markdownEditor: "Markdown Editor",
+  },
+  "pt-BR": {
+    // Project Sidebar
+    spaces: "Espaços",
+    settings: "Configurações",
+    provider: "Provedor",
+    apiKey: "Chave API",
+    customBaseUrl: "URL Base Personalizada",
+    model: "Modelo",
+    webGrounding: "Pesquisa Web (Grounding)",
+    groundingOpenAI: "Usa search-preview para acesso à web ao vivo",
+    groundingOnline: "Adiciona :online para busca ao vivo",
+    groundingUnavailable: "Não disponível para este modelo",
+    theme: "Tema",
+    lightTheme: "Tema Claro",
+    lightThemeDesc: "Alternar entre modo claro e escuro",
+    language: "Idioma",
+    apiConfigured: "Chave API configurada",
+    apiDisabled: "Sem chave API — IA desativada",
+    saveSettings: "Salvar Configurações",
+    cancel: "Cancelar",
+    newSpace: "Novo Espaço",
+    importNodepad: "Importar .nodepad",
+    deleteSpaceConfirm: "Excluir Espaço?",
+    nodesCount: "nós",
+    nodeCount: "nó",
+
+    // Status Bar
+    processing: "processando...",
+    contextualizing: "contextualizando...",
+    failed: "falhou",
+    synthesisPanel: "Painel de Síntese",
+    workspaceIndex: "Índice do Espaço",
+    aboutNodepad: "Sobre o nodepad",
+    helpTooltip: "Encontre ajuda e o vídeo de introdução aqui a qualquer momento",
+
+    // Vim Input & Command Palette
+    entry: "Entrada",
+    capturePlaceholder: "Capture algo...",
+    undo: "Desfazer",
+    commands: "Comandos",
+    submit: "Enviar",
+    views: "Visualizações",
+    navigate: "Navegação",
+    actions: "Ações",
+    noCommandsMatch: "Nenhum comando corresponde",
+    clear: "limpar",
+    searchCommands: "Pesquisar comandos...",
+    
+    // Command Palette Items
+    cmdTiling: "Mosaico",
+    cmdKanban: "Quadro",
+    cmdGraph: "Gráfico",
+    cmdProjects: "Projetos",
+    cmdNewProject: "Novo Projeto",
+    cmdIndex: "Índice",
+    cmdSynthesis: "Síntese",
+    cmdExportNodepad: "Exportar",
+    cmdImportNodepad: "Importar",
+    cmdExportMarkdown: "Exportar",
+    cmdCopyMarkdown: "Copiar",
+    cmdClearCanvas: "Limpar",
+    
+    // Keyboard hints
+    kbdRows: "linhas",
+    kbdTiles: "nós",
+    kbdSelect: "selecionar",
+    kbdClose: "fechar",
+
+    // Tile Index
+    boardIndex: "Índice do Quadro",
+    canvasIndex: "Índice do Espaço",
+    columns: "Colunas",
+    emptyNote: "Nota vazia",
+
+    // Ghost Panel (Synthesis)
+    synthesisTitle: "Síntese",
+    emergentTheses: "Teses emergentes\naparecerão aqui",
+    synthesizing: "Sintetizando...",
+    addToCanvas: "Adicionar à tela",
+    writingPatternsHint: "Gerado a partir dos seus padrões de escrita",
+
+    // Intro Modal
+    introTitle: "Uma rápida introdução",
+    skipToApp: "Pular para o app →",
+    introFooter: "Você pode rever este vídeo no botão ? a qualquer momento",
+
+    // Empty States
+    spatialWorkspace: "espaço de pesquisa espacial",
+    typeGroupedBoard: "visualização de quadro agrupado por tipo",
+    forceDirectedGraph: "visualização de gráfico de forças",
+    emptyHint: "digite algo · #tipo para classificar · {mod}K para comandos",
+    
+    // Empty State Prompts
+    promptQuestion: "Será que a consciência exige um período de solidão genuína?",
+    promptQuestionAlt: "Será que a criatividade exige períodos de solidão?",
+    promptClaim: "A cafeína melhora a memória de curto prazo em cerca de 15%",
+    promptQuote: "A atenção é a forma mais rara de generosidade — Simone Weil",
+    promptTask: "Revisar artigos sobre consenso distribuído",
+    promptIdea: "E se a colaboração apenas refinar, e não gerar, ideias originais?",
+    promptIdeaAlt: "A colaboração refina ideias, a solidão as gera",
+    promptEntity: "Adam Grant — psicólogo organizacional",
+
+    // Warnings & Banners
+    apiKeyWarning: "⚡ A síntese de IA requer uma chave de API do OpenRouter — use um modelo gratuito (sem necessidade de créditos) ou adicione créditos para usar GPT-4o, Claude, entre outros. Configure no painel esquerdo (☰).",
+    addApiKey: "Adicionar chave API →",
+    getFreeKey: "Obter chave gratuita ↗",
+
+    // Content Types
+    typeEntity: "Entidade",
+    typeClaim: "Afirmação",
+    typeQuestion: "Pergunta",
+    typeTask: "Tarefa",
+    typeIdea: "Ideia",
+    typeReference: "Referência",
+    typeQuote: "Citação",
+    typeDefinition: "Definição",
+    typeOpinion: "Opinião",
+    typeReflection: "Reflexão",
+    typeNarrative: "Narrativa",
+    typeComparison: "Comparação",
+    typeGeneral: "Nota",
+    typeThesis: "Tese",
+
+    // Column Headers
+    colEnriching: "Processando",
+    colTasks: "Tarefas",
+    colThesis: "Tese",
+
+    // Tile Card & Graph Detail
+    notRelated: "Não relacionado ao assunto",
+    retryClick: "Clique duplo para tentar novamente.",
+    retryKey: "A enriquecimento de IA falhou — sem chave de API. Abra a barra lateral (☰) → Configurações para adicionar sua chave.",
+    retryGeneric: "Falha no enriquecimento. Clique duplo para tentar novamente.",
+    confidence: "Confiança",
+    noTopic: "sem-assunto",
+    connectedNodes: "Nós conectados",
+    linkText: "Conexão",
+    linksText: "Conexões",
+    more: "mais",
+    changeType: "Alterar tipo",
+    moveToSpace: "Mover ou copiar para o espaço",
+    moveBtn: "Mover",
+    copyBtn: "Copiar",
+    noOtherSpaces: "Sem outros espaços — crie um primeiro.",
+    doubleClickEdit: "Clique duplo para editar",
+    selectNodeToInspect: "Selecione um nó para inspecionar",
+    refreshThesis: "Atualizar síntese da tese",
+    unpin: "Desafixar nota",
+    pin: "Fixar nota",
+    deleteNote: "Excluir nota",
+    saveEditHint: "Enter ↵ salvar · Shift+Enter nova linha · Esc cancelar",
+    markdownEditor: "Editor Markdown",
+  }
+}

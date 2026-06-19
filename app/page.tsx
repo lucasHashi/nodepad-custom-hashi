@@ -19,6 +19,7 @@ import { generateGhostClient } from "@/lib/ai-ghost"
 import { exportToMarkdown, downloadMarkdown, copyToClipboard } from "@/lib/export"
 import { downloadNodepadFile, parseNodepadFile, NodepadParseError } from "@/lib/nodepad-format"
 import { detectContentType } from "@/lib/detect-content-type"
+import { translations } from "@/lib/translations"
 
 function generateId() {
   return Math.random().toString(36).substring(2, 10)
@@ -53,6 +54,9 @@ export default function Page() {
   const [showHelpTooltip, setShowHelpTooltip] = useState(false)
   const helpTooltipTimer = useRef<NodeJS.Timeout | null>(null)
   const { settings, updateSettings, resolvedModelId, currentModel, isHydrated } = useAISettings()
+  const settingsRef = useRef(settings)
+  useEffect(() => { settingsRef.current = settings }, [settings])
+  const t = translations[settings.language || "en"]
   const debounceTimers = useRef<Record<string, Record<string, NodeJS.Timeout>>>({})
 
   // ── Undo history ring (max 20 block snapshots per project) ───────────────
@@ -345,7 +349,7 @@ export default function Page() {
       // Pass the last 5 generated ghost texts so the model can avoid near-duplicates
       const previousSyntheses = (targetProject.lastGhostTexts || []).slice(-5)
 
-      const data = await generateGhostClient(context, previousSyntheses)
+      const data = await generateGhostClient(context, previousSyntheses, settingsRef.current.language)
       setProjects(prev => prev.map(p => {
         if (p.id !== projectId) return p
         return {
@@ -391,6 +395,7 @@ export default function Page() {
         context.map(({ id, ...rest }) => ({ id, ...rest })),
         forcedType,
         category,
+        settingsRef.current.language,
       )
 
       // Map indices back to stable block IDs — the context array carries
@@ -932,17 +937,18 @@ export default function Page() {
             setShowHelpTooltip(false)
             if (helpTooltipTimer.current) clearTimeout(helpTooltipTimer.current)
           }}
+          language={settings.language}
         />
 
         {isHydrated && !settings.apiKey && (
           <div className="flex items-center justify-center gap-3 px-4 py-2 bg-amber-950/80 border-b border-amber-800/60 text-amber-200 text-xs shrink-0">
-            <span className="opacity-80">⚡ AI enrichment requires an <strong className="text-amber-200">OpenRouter API key</strong> — use a free model (no credits needed) or add credits for GPT-4o, Claude, and more. Configure in the <strong className="text-amber-200">☰ left panel</strong>.</span>
+            <span className="opacity-80">{t.apiKeyWarning}</span>
             <div className="flex items-center gap-2 shrink-0">
               <button
                 onClick={() => { setIsSidebarOpen(true); setJumpToSettings(true) }}
                 className="px-2.5 py-1 rounded bg-amber-700/60 hover:bg-amber-600/70 text-amber-100 font-medium transition-colors cursor-pointer border border-amber-600/50"
               >
-                Add API key →
+                {t.addApiKey}
               </button>
               <a
                 href="https://openrouter.ai/keys"
@@ -950,7 +956,7 @@ export default function Page() {
                 rel="noopener noreferrer"
                 className="opacity-60 hover:opacity-90 transition-opacity underline underline-offset-2"
               >
-                Get a free key ↗
+                {t.getFreeKey}
               </a>
             </div>
           </div>
@@ -979,6 +985,7 @@ export default function Page() {
                   activeWorkspaceId={activeProjectId}
                   onMoveToWorkspace={moveBlockToWorkspace}
                   onCopyToWorkspace={copyBlockToWorkspace}
+                  language={settings.language}
                 />
               ) : viewMode === "kanban" ? (
                 <KanbanArea
@@ -994,6 +1001,7 @@ export default function Page() {
                   onToggleSubTask={handleToggleSubTask}
                   onDeleteSubTask={handleDeleteSubTask}
                   collapsedIds={new Set(activeProject.collapsedIds)}
+                  language={settings.language}
                 />
               ) : (
                 <GraphArea
@@ -1012,6 +1020,7 @@ export default function Page() {
                   activeWorkspaceId={activeProjectId}
                   onMoveToWorkspace={moveBlockToWorkspace}
                   onCopyToWorkspace={copyBlockToWorkspace}
+                  language={settings.language}
                 />
               )
             ) : (
@@ -1025,6 +1034,7 @@ export default function Page() {
             onClose={() => setIsGhostPanelOpen(false)}
             onClaim={claimGhostNote}
             onDismiss={dismissGhostNote}
+            language={settings.language}
           />
         </div>
 
@@ -1050,6 +1060,7 @@ export default function Page() {
           onCommand={handleCommand}
           isCommandKOpen={isCommandKOpen}
           setIsCommandKOpen={setIsCommandKOpen}
+          language={settings.language}
         />
       </div>
 
@@ -1060,10 +1071,11 @@ export default function Page() {
         onClose={() => setIsIndexOpen(false)}
         isOpen={isIndexOpen}
         viewMode={viewMode}
+        language={settings.language}
       />
 
       {/* First-visit intro video modal */}
-      <IntroModal open={isIntroOpen} onClose={handleIntroClose} />
+      <IntroModal open={isIntroOpen} onClose={handleIntroClose} language={settings.language} />
     </div>
   )
 }

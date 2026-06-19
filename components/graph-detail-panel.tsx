@@ -7,6 +7,8 @@ import type { TextBlock } from "@/components/tile-card"
 import { Link as LinkIcon, Pin, RefreshCw, Tag, X } from "lucide-react"
 import ReactMarkdown from "react-markdown"
 import remarkGfm from "remark-gfm"
+import { translations } from "@/lib/translations"
+
 
 const AnnotationMarkdownComponents = {
   a: ({ href, children }: any) => (
@@ -62,6 +64,7 @@ interface GraphDetailPanelProps {
   onTogglePin: (id: string) => void
   onEdit: (id: string, text: string) => void
   onEditAnnotation: (id: string, annotation: string) => void
+  language?: "en" | "pt-BR"
 }
 
 export function GraphDetailPanel({
@@ -74,6 +77,7 @@ export function GraphDetailPanel({
   onTogglePin,
   onEdit,
   onEditAnnotation,
+  language,
 }: GraphDetailPanelProps) {
   const [editingText, setEditingText] = React.useState(false)
   const [editingAnnotation, setEditingAnnotation] = React.useState(false)
@@ -85,6 +89,8 @@ export function GraphDetailPanel({
   const [pickerRect, setPickerRect] = React.useState<DOMRect | null>(null)
   const typeChangeButtonRef = React.useRef<HTMLButtonElement>(null)
   const typePickerDropdownRef = React.useRef<HTMLDivElement>(null)
+
+  const t = translations[language || "en"]
 
   React.useEffect(() => {
     if (!isTypePickerOpen) return
@@ -136,7 +142,7 @@ export function GraphDetailPanel({
           <span className="inline-block h-2 w-2 rounded-sm bg-foreground opacity-30" />
         </div>
         <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground/40">
-          Select a node to inspect
+          {t.selectNodeToInspect}
         </p>
       </div>
     )
@@ -189,11 +195,11 @@ export function GraphDetailPanel({
           {/* Type display — read-only label; shimmer while enriching */}
           <Icon className="h-3 w-3 flex-shrink-0" />
           <span className={`font-mono text-[10px] font-bold uppercase tracking-wider ${block.isEnriching ? "shimmer-text" : ""}`}>
-            {config.label}
+            {t[`type${block.contentType.charAt(0).toUpperCase() + block.contentType.slice(1)}` as keyof typeof t] || config.label}
           </span>
           {/* Category tag — read-only, updated by AI on enrichment */}
           <span className="rounded-sm bg-black/10 px-1.5 py-0.5 font-mono text-[8px] font-black uppercase tracking-tighter opacity-60">
-            #{block.category || "no-topic"}
+            #{block.category || t.noTopic}
           </span>
         </div>
         <div className="flex items-center gap-1.5 flex-shrink-0" style={{ color: "inherit" }}>
@@ -208,28 +214,28 @@ export function GraphDetailPanel({
               setIsTypePickerOpen(v => !v)
             }}
             className={`p-1 rounded-sm transition-opacity ${isTypePickerOpen ? "opacity-100 bg-black/20" : "opacity-40 hover:opacity-90"}`}
-            title="Change type"
+            title={t.changeType}
           >
             <Tag className="h-3 w-3" />
           </button>
           <button
             onClick={() => onTogglePin(block.id)}
             className={`p-1 rounded-sm transition-opacity ${block.isPinned ? "opacity-100" : "opacity-40 hover:opacity-90"}`}
-            title={block.isPinned ? "Unpin" : "Pin"}
+            title={block.isPinned ? t.unpin : t.pin}
           >
             <Pin className="h-3 w-3" />
           </button>
           <button
             onClick={() => onReEnrich(block.id)}
             className="p-1 rounded-sm opacity-40 hover:opacity-90 transition-opacity"
-            title="Re-enrich"
+            title={language === "pt-BR" ? "Re-enriquecer" : "Re-enrich"}
           >
             <RefreshCw className="h-3 w-3" />
           </button>
           <button
             onClick={onClose}
             className="p-1 rounded-sm opacity-40 hover:opacity-90 transition-opacity"
-            title="Close"
+            title={language === "pt-BR" ? "Fechar" : "Close"}
           >
             <X className="h-3.5 w-3.5" />
           </button>
@@ -258,7 +264,7 @@ export function GraphDetailPanel({
             <p
               className={`text-base font-bold leading-relaxed text-foreground cursor-text hover:bg-secondary/20 rounded-sm px-2 py-1 -mx-2 transition-colors ${block.isEnriching ? "shimmer-text" : ""}`}
               onDoubleClick={() => { setDraftText(block.text); setEditingText(true) }}
-              title="Double-click to edit"
+              title={t.doubleClickEdit}
             >
               {linkifyText(block.text)}
             </p>
@@ -269,7 +275,7 @@ export function GraphDetailPanel({
         {block.confidence != null && (
           <div className="px-4 pb-3 space-y-1">
             <div className="flex items-center justify-between">
-              <span className="font-mono text-[8px] uppercase tracking-widest text-muted-foreground/50">Confidence</span>
+              <span className="font-mono text-[8px] uppercase tracking-widest text-muted-foreground/50">{t.confidence}</span>
               <span className="font-mono text-[10px] font-bold" style={{ color: accent }}>{block.confidence}%</span>
             </div>
             <div className="h-1 w-full rounded-full bg-secondary overflow-hidden">
@@ -302,7 +308,7 @@ export function GraphDetailPanel({
                 className="text-sm leading-relaxed text-muted-foreground cursor-text hover:bg-secondary/20 rounded-sm px-2 py-1 -mx-2 transition-colors border-l-2 pl-3"
                 style={{ borderColor: accent + "60" }}
                 onDoubleClick={() => { setDraftAnnotation(block.annotation ?? ""); setEditingAnnotation(true) }}
-                title="Double-click to edit"
+                title={t.doubleClickEdit}
               >
                 <ReactMarkdown
                   remarkPlugins={[remarkGfm]}
@@ -356,7 +362,7 @@ export function GraphDetailPanel({
           onMouseDown={e => e.stopPropagation()}
         >
           <p className="px-2.5 pt-2 pb-1 font-mono text-[9px] uppercase tracking-widest text-muted-foreground/50">
-            Change type
+            {t.changeType}
           </p>
           <div className="grid grid-cols-2 gap-px p-1.5 pt-0">
             {(Object.entries(CONTENT_TYPE_CONFIG) as [ContentType, typeof CONTENT_TYPE_CONFIG[ContentType]][])
@@ -372,7 +378,7 @@ export function GraphDetailPanel({
                   >
                     <TypeIcon className="h-3 w-3 flex-shrink-0" style={{ color: cfg.accentVar }} />
                     <span className="font-mono text-[10px] uppercase tracking-wide" style={{ color: isActive ? cfg.accentVar : undefined }}>
-                      {cfg.label}
+                      {t[`type${type.charAt(0).toUpperCase() + type.slice(1)}` as keyof typeof t] || cfg.label}
                     </span>
                   </button>
                 )

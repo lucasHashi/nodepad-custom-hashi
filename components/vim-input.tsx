@@ -9,14 +9,7 @@ import {
 } from "lucide-react"
 import { Command } from "cmdk"
 import { useModKey } from "@/lib/utils"
-
-const ACTION_ITEMS = [
-  { id: "export-nodepad", icon: FolderDown,  label: "Export",  sub: ".nodepad"  },
-  { id: "import-nodepad", icon: FolderInput, label: "Import",  sub: ".nodepad"  },
-  { id: "export-md",      icon: Download,    label: "Export",  sub: "markdown"  },
-  { id: "copy-md",        icon: Clipboard,   label: "Copy",    sub: "markdown"  },
-  { id: "clear",          icon: Trash2,      label: "Clear",   sub: "canvas"    },
-]
+import { translations } from "@/lib/translations"
 
 // ─── Props ───────────────────────────────────────────────────────────────────
 
@@ -25,15 +18,17 @@ interface VimInputProps {
   onCommand: (cmd: string, text?: string) => void
   isCommandKOpen: boolean
   setIsCommandKOpen: (open: boolean) => void
+  language?: "en" | "pt-BR"
 }
 
 // ─── Component ───────────────────────────────────────────────────────────────
 
-export function VimInput({ onSubmit, onCommand, isCommandKOpen, setIsCommandKOpen }: VimInputProps) {
+export function VimInput({ onSubmit, onCommand, isCommandKOpen, setIsCommandKOpen, language }: VimInputProps) {
   const [value, setValue] = React.useState("")
   const [search, setSearch] = React.useState("")
   const [focusedIdx, setFocusedIdx] = React.useState(0)
   const mod = useModKey()
+  const t = translations[language || "en"]
 
   const mainInputRef = React.useRef<HTMLInputElement>(null)
   const searchInputRef = React.useRef<HTMLInputElement>(null)
@@ -42,24 +37,32 @@ export function VimInput({ onSubmit, onCommand, isCommandKOpen, setIsCommandKOpe
   // ── Items (mod-key aware) ───────────────────────────────────────────────
 
   const VIEW_ITEMS = React.useMemo(() => [
-    { id: "tiling", icon: Grid,    label: "Tiling", sub: "" },
-    { id: "kanban", icon: Trello,  label: "Kanban", sub: "" },
-    { id: "graph",  icon: GitFork, label: "Graph",  sub: "" },
-  ], [])
+    { id: "tiling", icon: Grid,    label: t.cmdTiling, sub: "" },
+    { id: "kanban", icon: Trello,  label: t.cmdKanban, sub: "" },
+    { id: "graph",  icon: GitFork, label: t.cmdGraph,  sub: "" },
+  ], [t])
 
   const NAV_ITEMS = React.useMemo(() => [
-    { id: "open-projects",  icon: FolderOpen, label: "Projects",    sub: "" },
-    { id: "new-project",    icon: FolderPlus, label: "New Project", sub: "" },
-    { id: "open-index",     icon: BookOpen,   label: "Index",       sub: "" },
-    { id: "open-synthesis", icon: Sparkles,   label: "Synthesis",   sub: "" },
-  ], [])
+    { id: "open-projects",  icon: FolderOpen, label: t.cmdProjects,    sub: "" },
+    { id: "new-project",    icon: FolderPlus, label: t.cmdNewProject, sub: "" },
+    { id: "open-index",     icon: BookOpen,   label: t.cmdIndex,       sub: "" },
+    { id: "open-synthesis", icon: Sparkles,   label: t.cmdSynthesis,   sub: "" },
+  ], [t])
+
+  const actionItemsRaw = React.useMemo(() => [
+    { id: "export-nodepad", icon: FolderDown,  label: t.cmdExportNodepad,  sub: ".nodepad"  },
+    { id: "import-nodepad", icon: FolderInput, label: t.cmdImportNodepad,  sub: ".nodepad"  },
+    { id: "export-md",      icon: Download,    label: t.cmdExportMarkdown, sub: "markdown"  },
+    { id: "copy-md",        icon: Clipboard,   label: t.cmdCopyMarkdown,   sub: "markdown"  },
+    { id: "clear",          icon: Trash2,      label: t.cmdClearCanvas,    sub: t.clear    },
+  ], [t])
 
   // ── Filtered items ──────────────────────────────────────────────────────
 
   const q = search.toLowerCase()
   const viewItems   = q ? VIEW_ITEMS.filter(i => i.label.toLowerCase().includes(q) || i.sub.toLowerCase().includes(q))   : VIEW_ITEMS
   const navItems    = q ? NAV_ITEMS.filter(i  => i.label.toLowerCase().includes(q) || i.sub.toLowerCase().includes(q))    : NAV_ITEMS
-  const actionItems = q ? ACTION_ITEMS.filter(i => i.label.toLowerCase().includes(q) || i.sub.toLowerCase().includes(q)) : ACTION_ITEMS
+  const actionItems = q ? actionItemsRaw.filter(i => i.label.toLowerCase().includes(q) || i.sub.toLowerCase().includes(q)) : actionItemsRaw
 
   const viewCount   = viewItems.length
   const navCount    = navItems.length
@@ -206,25 +209,25 @@ export function VimInput({ onSubmit, onCommand, isCommandKOpen, setIsCommandKOpe
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: 8 }}
               transition={{ duration: 0.15, ease: "easeOut" }}
-              className="absolute bottom-full left-0 right-0 w-full border-t border-white/10 bg-black/85 backdrop-blur-3xl shadow-[0_-24px_60px_-12px_rgba(0,0,0,0.6)]"
+              className="absolute bottom-full left-0 right-0 w-full border-t border-border bg-popover/95 backdrop-blur-3xl shadow-[0_-24px_60px_-12px_rgba(0,0,0,0.15)]"
               onKeyDown={handlePopupKeyDown}
             >
               {/* Search input */}
-              <div className="flex items-center gap-3 px-5 py-3 border-b border-white/10">
-                <span className="font-mono text-[9px] uppercase tracking-[0.2em] text-white/60 select-none shrink-0">{mod}K</span>
+              <div className="flex items-center gap-3 px-5 py-3 border-b border-border">
+                <span className="font-mono text-[9px] uppercase tracking-[0.2em] text-muted-foreground select-none shrink-0">{mod}K</span>
                 <input
                   ref={searchInputRef}
                   value={search}
                   onChange={e => setSearch(e.target.value)}
-                  placeholder="Search commands…"
-                  className="flex-1 bg-transparent font-mono text-xs text-white/70 placeholder:text-white/55 outline-none"
+                  placeholder={t.searchCommands}
+                  className="flex-1 bg-transparent font-mono text-xs text-foreground placeholder:text-muted-foreground/60 outline-none"
                 />
                 {search && (
                   <button
                     onClick={() => setSearch("")}
-                    className="text-white/40 hover:text-white/70 transition-colors text-[10px] font-mono"
+                    className="text-muted-foreground/60 hover:text-foreground transition-colors text-[10px] font-mono"
                   >
-                    clear
+                    {t.clear}
                   </button>
                 )}
               </div>
@@ -234,7 +237,7 @@ export function VimInput({ onSubmit, onCommand, isCommandKOpen, setIsCommandKOpe
                 {/* ── Views ──────────────────────────────────────────────── */}
                 {viewItems.length > 0 && (
                   <div>
-                    <p className="px-1 pb-2 font-mono text-[8px] font-bold uppercase tracking-[0.2em] text-white/45">Views</p>
+                    <p className="px-1 pb-2 font-mono text-[8px] font-bold uppercase tracking-[0.2em] text-muted-foreground">{t.views}</p>
                     <div className="grid grid-cols-3 gap-1.5">
                       {viewItems.map((item, i) => {
                         const focused = focusedIdx === i
@@ -244,12 +247,12 @@ export function VimInput({ onSubmit, onCommand, isCommandKOpen, setIsCommandKOpe
                             ref={el => { itemRefs.current[i] = el }}
                             onClick={() => handleSelect(item.id)}
                             onMouseEnter={() => setFocusedIdx(i)}
-                            className={`group flex flex-col items-center justify-center gap-2 rounded-sm border py-4 px-2 transition-all duration-100 outline-none ${focused ? "bg-primary/12 border-primary/35 text-primary shadow-[0_0_0_1px_var(--primary),inset_0_1px_0_rgba(255,255,255,0.05)]" : "bg-white/[0.03] border-white/[0.07] text-white/55 hover:bg-white/[0.06] hover:border-white/20 hover:text-white/80"}`}
+                            className={`group flex flex-col items-center justify-center gap-2 rounded-sm border py-4 px-2 transition-all duration-100 outline-none ${focused ? "bg-primary/12 border-primary/35 text-primary shadow-[0_0_0_1px_var(--primary),inset_0_1px_0_rgba(255,255,255,0.05)]" : "bg-secondary/40 border-border/40 text-muted-foreground hover:bg-secondary/60 hover:border-border/60 hover:text-foreground"}`}
                           >
                             <item.icon className={`h-[18px] w-[18px] transition-transform duration-100 ${focused ? "scale-110" : "group-hover:scale-105"}`} />
                             <div className="text-center leading-tight">
                               <div className="font-mono text-[10px] font-bold tracking-tight">{item.label}</div>
-                              {item.sub && <div className={`font-mono text-[7px] uppercase tracking-[0.15em] mt-0.5 ${focused ? "text-primary/60" : "text-white/40"}`}>{item.sub}</div>}
+                              {item.sub && <div className={`font-mono text-[7px] uppercase tracking-[0.15em] mt-0.5 ${focused ? "text-primary/70" : "text-muted-foreground/50"}`}>{item.sub}</div>}
                             </div>
                           </button>
                         )
@@ -260,8 +263,8 @@ export function VimInput({ onSubmit, onCommand, isCommandKOpen, setIsCommandKOpe
 
                 {/* ── Navigate ───────────────────────────────────────────── */}
                 {navItems.length > 0 && (
-                  <div className="border-t border-white/10 pt-3">
-                    <p className="px-1 pb-2 font-mono text-[8px] font-bold uppercase tracking-[0.2em] text-white/45">Navigate</p>
+                  <div className="border-t border-border pt-3">
+                    <p className="px-1 pb-2 font-mono text-[8px] font-bold uppercase tracking-[0.2em] text-muted-foreground">{t.navigate}</p>
                     <div className="grid grid-cols-4 gap-1.5">
                       {navItems.map((item, i) => {
                         const idx     = viewCount + i
@@ -272,12 +275,12 @@ export function VimInput({ onSubmit, onCommand, isCommandKOpen, setIsCommandKOpe
                             ref={el => { itemRefs.current[idx] = el }}
                             onClick={() => handleSelect(item.id)}
                             onMouseEnter={() => setFocusedIdx(idx)}
-                            className={`group flex flex-col items-center justify-center gap-2 rounded-sm border py-4 px-2 transition-all duration-100 outline-none ${focused ? "bg-primary/12 border-primary/35 text-primary shadow-[0_0_0_1px_var(--primary),inset_0_1px_0_rgba(255,255,255,0.05)]" : "bg-white/[0.03] border-white/[0.07] text-white/55 hover:bg-white/[0.06] hover:border-white/20 hover:text-white/80"}`}
+                            className={`group flex flex-col items-center justify-center gap-2 rounded-sm border py-4 px-2 transition-all duration-100 outline-none ${focused ? "bg-primary/12 border-primary/35 text-primary shadow-[0_0_0_1px_var(--primary),inset_0_1px_0_rgba(255,255,255,0.05)]" : "bg-secondary/40 border-border/40 text-muted-foreground hover:bg-secondary/60 hover:border-border/60 hover:text-foreground"}`}
                           >
                             <item.icon className={`h-[18px] w-[18px] transition-transform duration-100 ${focused ? "scale-110" : "group-hover:scale-105"}`} />
                             <div className="text-center leading-tight">
                               <div className="font-mono text-[10px] font-bold tracking-tight">{item.label}</div>
-                              {item.sub && <div className={`font-mono text-[7px] uppercase tracking-[0.15em] mt-0.5 ${focused ? "text-primary/60" : "text-white/40"}`}>{item.sub}</div>}
+                              {item.sub && <div className={`font-mono text-[7px] uppercase tracking-[0.15em] mt-0.5 ${focused ? "text-primary/70" : "text-muted-foreground/50"}`}>{item.sub}</div>}
                             </div>
                           </button>
                         )
@@ -288,8 +291,8 @@ export function VimInput({ onSubmit, onCommand, isCommandKOpen, setIsCommandKOpe
 
                 {/* ── Actions ────────────────────────────────────────────── */}
                 {actionItems.length > 0 && (
-                  <div className="border-t border-white/10 pt-3">
-                    <p className="px-1 pb-2 font-mono text-[8px] font-bold uppercase tracking-[0.2em] text-white/45">Actions</p>
+                  <div className="border-t border-border pt-3">
+                    <p className="px-1 pb-2 font-mono text-[8px] font-bold uppercase tracking-[0.2em] text-muted-foreground">{t.actions}</p>
                     <div className="grid grid-cols-5 gap-1.5">
                       {actionItems.map((item, i) => {
                         const idx     = viewCount + navCount + i
@@ -300,12 +303,12 @@ export function VimInput({ onSubmit, onCommand, isCommandKOpen, setIsCommandKOpe
                             ref={el => { itemRefs.current[idx] = el }}
                             onClick={() => handleSelect(item.id)}
                             onMouseEnter={() => setFocusedIdx(idx)}
-                            className={`group flex flex-col items-center justify-center gap-2 rounded-sm border py-4 px-2 transition-all duration-100 outline-none ${focused ? "bg-primary/12 border-primary/35 text-primary shadow-[0_0_0_1px_var(--primary),inset_0_1px_0_rgba(255,255,255,0.05)]" : "bg-white/[0.03] border-white/[0.07] text-white/55 hover:bg-white/[0.06] hover:border-white/20 hover:text-white/80"}`}
+                            className={`group flex flex-col items-center justify-center gap-2 rounded-sm border py-4 px-2 transition-all duration-100 outline-none ${focused ? "bg-primary/12 border-primary/35 text-primary shadow-[0_0_0_1px_var(--primary),inset_0_1px_0_rgba(255,255,255,0.05)]" : "bg-secondary/40 border-border/40 text-muted-foreground hover:bg-secondary/60 hover:border-border/60 hover:text-foreground"}`}
                           >
                             <item.icon className={`h-[18px] w-[18px] transition-transform duration-100 ${focused ? "scale-110" : "group-hover:scale-105"}`} />
                             <div className="text-center leading-tight">
                               <div className="font-mono text-[10px] font-bold tracking-tight">{item.label}</div>
-                              <div className={`font-mono text-[7px] uppercase tracking-[0.15em] mt-0.5 ${focused ? "text-primary/60" : "text-white/40"}`}>{item.sub}</div>
+                              <div className={`font-mono text-[7px] uppercase tracking-[0.15em] mt-0.5 ${focused ? "text-primary/70" : "text-muted-foreground/50"}`}>{item.sub}</div>
                             </div>
                           </button>
                         )
@@ -316,23 +319,23 @@ export function VimInput({ onSubmit, onCommand, isCommandKOpen, setIsCommandKOpe
 
                 {/* ── Empty state ────────────────────────────────────────── */}
                 {totalItems === 0 && (
-                  <div className="py-10 text-center font-mono text-[9px] uppercase tracking-[0.2em] text-white/45">
-                    No commands match
+                  <div className="py-10 text-center font-mono text-[9px] uppercase tracking-[0.2em] text-muted-foreground">
+                    {t.noCommandsMatch}
                   </div>
                 )}
               </div>
 
               {/* Footer hint */}
-              <div className="flex items-center justify-end gap-4 px-5 py-2 border-t border-white/10">
+              <div className="flex items-center justify-end gap-4 px-5 py-2 border-t border-border">
                 {[
-                  ["↑↓", "rows"],
-                  ["←→", "tiles"],
-                  ["↵",  "select"],
-                  ["esc","close"],
+                  ["↑↓", t.kbdRows],
+                  ["←→", t.kbdTiles],
+                  ["↵",  t.kbdSelect],
+                  ["esc", t.kbdClose],
                 ].map(([key, label]) => (
                   <div key={key} className="flex items-center gap-1.5">
-                    <kbd className="font-mono text-[9px] text-white/50 bg-white/8 border border-white/15 rounded px-1 py-0.5">{key}</kbd>
-                    <span className="font-mono text-[8px] uppercase tracking-wider text-white/60">{label}</span>
+                    <kbd className="font-mono text-[9px] text-muted-foreground bg-secondary/50 border border-border rounded px-1 py-0.5">{key}</kbd>
+                    <span className="font-mono text-[8px] uppercase tracking-wider text-muted-foreground">{label}</span>
                   </div>
                 ))}
               </div>
@@ -341,43 +344,43 @@ export function VimInput({ onSubmit, onCommand, isCommandKOpen, setIsCommandKOpe
         </AnimatePresence>
 
         {/* ── Main Input Bar ─────────────────────────────────────────────── */}
-        <div className="w-full border-t border-white/20 bg-black/80 backdrop-blur-3xl px-6 py-5 flex items-center gap-4 transition-all duration-300 focus-within:border-primary/40 relative">
+        <div className="w-full border-t border-border bg-card/95 backdrop-blur-3xl px-6 py-5 flex items-center gap-4 transition-all duration-300 focus-within:border-primary/40 relative">
           <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-primary/20 to-transparent" />
 
           <div className="flex items-center gap-3 flex-1">
-            <div className="font-mono text-[10px] font-bold text-white/60 uppercase tracking-[0.2em] select-none">
-              Entry
+            <div className="font-mono text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em] select-none">
+              {t.entry}
             </div>
             <Command.Input
               ref={mainInputRef}
               value={value}
               onValueChange={setValue}
-              placeholder="Capture something..."
-              className="flex-1 bg-transparent font-mono text-sm tracking-tight text-white outline-none placeholder:text-white/55"
+              placeholder={t.capturePlaceholder}
+              className="flex-1 bg-transparent font-mono text-sm tracking-tight text-foreground outline-none placeholder:text-muted-foreground/60"
               autoFocus
             />
           </div>
 
           <div className="flex items-center gap-3">
             <div className="flex items-center gap-2">
-              <kbd className="flex h-5 items-center rounded border border-white/10 bg-white/5 px-1.5 font-mono text-[9px] text-white/60">
+              <kbd className="flex h-5 items-center rounded border border-border bg-secondary/50 px-1.5 font-mono text-[9px] text-muted-foreground">
                 <span className="text-[11px] mr-1">⌘</span>
                 <span>Z</span>
               </kbd>
-              <span className="text-[9px] font-mono font-bold text-white/55 uppercase tracking-tighter">Undo</span>
+              <span className="text-[9px] font-mono font-bold text-muted-foreground uppercase tracking-tighter">{t.undo}</span>
             </div>
 
-            <div className="h-4 w-px bg-white/10" />
+            <div className="h-4 w-px bg-border" />
 
             <div className="flex items-center gap-2">
-              <kbd className="flex h-5 items-center rounded border border-white/10 bg-white/5 px-1.5 font-mono text-[9px] text-white/60">
+              <kbd className="flex h-5 items-center rounded border border-border bg-secondary/50 px-1.5 font-mono text-[9px] text-muted-foreground">
                 <span className="text-[11px] mr-1">⌘</span>
                 <span>K</span>
               </kbd>
-              <span className="text-[9px] font-mono font-bold text-white/55 uppercase tracking-tighter">Commands</span>
+              <span className="text-[9px] font-mono font-bold text-muted-foreground uppercase tracking-tighter">{t.commands}</span>
             </div>
 
-            <div className="h-4 w-px bg-white/20" />
+            <div className="h-4 w-px bg-border" />
 
             <button
               onClick={() => {
@@ -390,7 +393,7 @@ export function VimInput({ onSubmit, onCommand, isCommandKOpen, setIsCommandKOpe
               className="font-mono text-[10px] font-bold text-primary uppercase tracking-widest hover:brightness-125 transition-all active:scale-95 disabled:opacity-20"
               disabled={!value.trim()}
             >
-              Submit
+              {t.submit}
             </button>
           </div>
         </div>

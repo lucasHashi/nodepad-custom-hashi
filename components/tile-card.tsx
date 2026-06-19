@@ -7,6 +7,8 @@ import { motion } from "framer-motion"
 import ReactMarkdown from "react-markdown"
 import remarkGfm from "remark-gfm"
 import { CONTENT_TYPE_CONFIG, type ContentType } from "@/lib/content-types"
+import { translations } from "@/lib/translations"
+
 
 export interface TextBlock {
   id: string
@@ -49,6 +51,7 @@ interface TileCardProps {
   activeWorkspaceId?: string
   onMoveToWorkspace?: (blockId: string, targetWorkspaceId: string) => void
   onCopyToWorkspace?: (blockId: string, targetWorkspaceId: string) => void
+  language?: "en" | "pt-BR"
 }
 
 // Custom Markdown components for styling
@@ -109,9 +112,12 @@ export const TileCard = memo(function TileCard({
   activeWorkspaceId,
   onMoveToWorkspace,
   onCopyToWorkspace,
+  language,
 }: TileCardProps) {
   // In tiling view, collapse is disabled — BSP layout can't redistribute freed space
   const effectiveCollapsed = hideCollapse ? false : isCollapsed
+  const t = translations[language || "en"]
+
   const [isEditing, setIsEditing] = useState(false)
   const [editText, setEditText] = useState(block.text)
   const [isHovered, setIsHovered] = useState(false)
@@ -376,12 +382,12 @@ export const TileCard = memo(function TileCard({
           {/* Type display — read-only label */}
           <Icon className="h-3 w-3 flex-shrink-0" />
           <span className="font-mono text-[10px] font-bold uppercase tracking-wider truncate max-w-[200px]">
-            {config.label}
+            {t[`type${block.contentType.charAt(0).toUpperCase() + block.contentType.slice(1)}` as keyof typeof t] || config.label}
           </span>
 
           {block.isUnrelated && !effectiveCollapsed && (
             <span className="ml-1 rounded-sm bg-black/10 px-1.5 py-0.5 font-mono text-[8px] font-black uppercase tracking-tighter text-black/60">
-              Not related to topic
+              {t.notRelated}
             </span>
           )}
         </div>
@@ -402,7 +408,9 @@ export const TileCard = memo(function TileCard({
                   ? "opacity-100 bg-black/20"
                   : "opacity-35 hover:opacity-90"
               }`}
-              title={isConnectionLocked ? "Click to unlock connections" : `Show ${block.influencedBy.length} connection${block.influencedBy.length !== 1 ? 's' : ''} — click to lock`}
+              title={isConnectionLocked 
+                ? (language === "pt-BR" ? "Clique para desbloquear conexões" : "Click to unlock connections") 
+                : `${language === "pt-BR" ? "Mostrar" : "Show"} ${block.influencedBy.length} ${block.influencedBy.length === 1 ? t.linkText : t.linksText} — ${language === "pt-BR" ? "clique para fixar" : "click to lock"}`}
             >
               <div className="h-[5px] w-[5px] rounded-full bg-current" />
               <div className={`h-[3px] w-[3px] rounded-full bg-current ${isConnectionLocked ? "opacity-100" : "opacity-60"}`} />
@@ -419,7 +427,7 @@ export const TileCard = memo(function TileCard({
                 onReEnrich(block.id, "thesis")
               }}
               className="flex h-4 w-4 items-center justify-center rounded-sm transition-all hover:bg-black/20"
-              title="Refresh thesis synthesis"
+              title={t.refreshThesis}
               disabled={block.isEnriching}
             >
               <RefreshCw className={`h-2.5 w-2.5 ${block.isEnriching ? "animate-spin opacity-50" : ""}`} />
@@ -432,8 +440,8 @@ export const TileCard = memo(function TileCard({
                 onTogglePin(block.id)
               }}
               className={`flex h-4 w-4 items-center justify-center rounded-sm transition-all shadow-sm ${block.isPinned ? "bg-black/20 opacity-100 scale-110 !opacity-100" : "opacity-40 hover:opacity-100 hover:bg-black/10"}`}
-              aria-label={block.isPinned ? "Unpin note" : "Pin note"}
-              title={block.isPinned ? "Unpin note" : "Pin note"}
+              aria-label={block.isPinned ? t.unpin : t.pin}
+              title={block.isPinned ? t.unpin : t.pin}
             >
               <Pin className={`h-2.5 w-2.5 transition-transform ${block.isPinned ? "fill-current" : "-rotate-45"}`} />
             </button>
@@ -450,8 +458,8 @@ export const TileCard = memo(function TileCard({
                 setIsMoveMenuOpen(v => !v)
               }}
               className={`flex h-4 w-4 items-center justify-center rounded-sm transition-all ${isMoveMenuOpen ? "bg-black/20 opacity-100" : "opacity-40 hover:opacity-100 hover:bg-black/10"}`}
-              title="Move or copy to another space"
-              aria-label="Move or copy to another space"
+              title={t.moveToSpace}
+              aria-label={t.moveToSpace}
             >
               <FolderInput className="h-2.5 w-2.5" />
             </button>
@@ -468,7 +476,7 @@ export const TileCard = memo(function TileCard({
                 setIsTypePickerOpen(v => !v)
               }}
               className={`flex h-4 w-4 items-center justify-center rounded-sm transition-all ${isTypePickerOpen ? "bg-black/20 opacity-100" : "opacity-40 hover:opacity-100 hover:bg-black/10"}`}
-              title="Change type"
+              title={t.changeType}
             >
               <Tag className="h-2.5 w-2.5" />
             </button>
@@ -479,7 +487,7 @@ export const TileCard = memo(function TileCard({
               onDelete(block.id)
             }}
             className="flex h-4 w-4 items-center justify-center rounded-sm transition-all hover:bg-black/10"
-            aria-label="Delete note"
+            aria-label={t.deleteNote}
           >
             <X className="h-2.5 w-2.5" />
           </button>
@@ -501,7 +509,7 @@ export const TileCard = memo(function TileCard({
           onMouseDown={e => e.stopPropagation()}
         >
           <p className="px-2.5 pt-2 pb-1 font-mono text-[9px] uppercase tracking-widest text-muted-foreground/50">
-            Change type
+            {t.changeType}
           </p>
           <div className="grid grid-cols-2 gap-px p-1.5 pt-0">
             {(Object.entries(CONTENT_TYPE_CONFIG) as [ContentType, typeof CONTENT_TYPE_CONFIG[ContentType]][])
@@ -523,7 +531,7 @@ export const TileCard = memo(function TileCard({
                       className="font-mono text-[10px] uppercase tracking-wide"
                       style={{ color: isActive ? cfg.accentVar : undefined }}
                     >
-                      {cfg.label}
+                      {t[`type${type.charAt(0).toUpperCase() + type.slice(1)}` as keyof typeof t] || cfg.label}
                     </span>
                   </button>
                 )
@@ -549,7 +557,7 @@ export const TileCard = memo(function TileCard({
           onMouseDown={e => e.stopPropagation()}
         >
           <p className="px-2.5 pt-2 pb-1 font-mono text-[9px] uppercase tracking-widest text-muted-foreground/50">
-            Move or copy to space
+            {t.moveToSpace}
           </p>
           <div className="flex flex-col gap-px p-1.5 pt-0 max-h-[280px] overflow-y-auto">
             {workspaces.filter(w => w.id !== activeWorkspaceId).map(w => (
@@ -566,7 +574,7 @@ export const TileCard = memo(function TileCard({
                   title={`Move to ${w.name}`}
                 >
                   <ArrowRightFromLine className="h-3 w-3" />
-                  <span className="font-mono text-[9px] uppercase tracking-wider">Move</span>
+                  <span className="font-mono text-[9px] uppercase tracking-wider">{t.moveBtn}</span>
                 </button>
                 <button
                   onClick={() => { onCopyToWorkspace(block.id, w.id); setIsMoveMenuOpen(false) }}
@@ -574,13 +582,13 @@ export const TileCard = memo(function TileCard({
                   title={`Copy to ${w.name}`}
                 >
                   <Copy className="h-3 w-3" />
-                  <span className="font-mono text-[9px] uppercase tracking-wider">Copy</span>
+                  <span className="font-mono text-[9px] uppercase tracking-wider">{t.copyBtn}</span>
                 </button>
               </div>
             ))}
             {workspaces.filter(w => w.id !== activeWorkspaceId).length === 0 && (
               <p className="px-2 py-3 text-center font-mono text-[10px] text-muted-foreground/60">
-                No other spaces — create one first.
+                {t.noOtherSpaces}
               </p>
             )}
           </div>
@@ -620,7 +628,7 @@ export const TileCard = memo(function TileCard({
                     />
                     <div className="flex items-center gap-1">
                       <span className="font-mono text-[10px] text-muted-foreground/60">
-                        Enter ↵ save · Shift+Enter newline · Esc cancel
+                        {t.saveEditHint}
                       </span>
                       <button
                         onMouseDown={(e) => {
@@ -641,10 +649,10 @@ export const TileCard = memo(function TileCard({
                       <div className="mb-3 flex items-start gap-2 rounded-sm border border-red-500/20 bg-red-500/10 px-2.5 py-2">
                         <span className="mt-px font-mono text-[9px] text-red-400/80 uppercase tracking-wider leading-relaxed">
                           {block.statusText === "no-api-key"
-                            ? <>AI enrichment failed — no API key. Open the <strong className="text-red-300">☰ sidebar → Settings</strong> to add your API key.</>
+                            ? t.retryKey
                             : block.statusText
-                              ? <>{block.statusText}{" "}<span className="opacity-60">Double-click to retry.</span></>
-                              : "Enrichment failed. Double-click to retry."}
+                              ? <>{block.statusText}{" "}<span className="opacity-60">{t.retryClick}</span></>
+                              : t.retryGeneric}
                         </span>
                       </div>
                     )}
@@ -664,7 +672,7 @@ export const TileCard = memo(function TileCard({
                               </span>
                               <button
                                 onClick={() => {
-                                  if (confirm("Delete this task?")) {
+                                  if (confirm(language === "pt-BR" ? "Excluir esta tarefa?" : "Delete this task?")) {
                                     onDeleteSubTask?.(block.id, st.id)
                                   }
                                 }}
@@ -698,21 +706,19 @@ export const TileCard = memo(function TileCard({
                           />
                           <div className="flex items-center justify-between px-1">
                             <span className="font-mono text-[10px] text-muted-foreground/60">
-                              Enter ↵ save · Shift+Enter newline · Esc cancel
+                              {t.saveEditHint}
                             </span>
-                            <span className="font-mono text-[9px] text-primary font-bold uppercase tracking-widest opacity-80">Markdown Editor</span>
+                            <span className="font-mono text-[9px] text-primary font-bold uppercase tracking-widest opacity-80">{t.markdownEditor}</span>
                           </div>
                         </div>
                     ) : (
-                        <div className="flex flex-col gap-2">
-                          <div className={`prose-sm prose-invert max-w-none text-[13px] leading-relaxed text-foreground/80 ${block.isEnriching ? "shimmer-body" : ""} ${isAnnotationRTL ? 'rtl-text' : ''}`}>
-                            <ReactMarkdown 
-                              remarkPlugins={[remarkGfm]}
-                              components={MarkdownComponents as any}
-                            >
-                              {block.annotation || ""}
-                            </ReactMarkdown>
-                          </div>
+                        <div className={`prose-sm dark:prose-invert max-w-none text-[13px] leading-relaxed text-foreground/80 ${block.isEnriching ? "shimmer-body" : ""} ${isAnnotationRTL ? 'rtl-text' : ''}`}>
+                          <ReactMarkdown 
+                            remarkPlugins={[remarkGfm]}
+                            components={MarkdownComponents as any}
+                          >
+                            {block.annotation || ""}
+                          </ReactMarkdown>
                         </div>
                     )}
                   </div>
@@ -724,7 +730,7 @@ export const TileCard = memo(function TileCard({
             {block.confidence !== undefined && block.confidence !== null && !isEditing && (
               <div className={`px-3 pb-2 flex-shrink-0 transition-opacity duration-300 ${isHovered ? "opacity-100" : "opacity-0"}`}>
                 <div className="flex items-center justify-between mb-1">
-                  <span className="font-mono text-[9px] text-muted-foreground">Confidence</span>
+                  <span className="font-mono text-[9px] text-muted-foreground">{t.confidence}</span>
                   <span className="font-mono text-[9px] text-muted-foreground">{Math.round(block.confidence)}%</span>
                 </div>
                 <div className="h-0.5 w-full overflow-hidden rounded-full bg-secondary">
@@ -758,13 +764,13 @@ export const TileCard = memo(function TileCard({
                     <span
                       className="rounded-sm px-2 py-0.5 font-mono text-[10px] font-bold flex items-center gap-1.5 shadow-sm shrink-0"
                       style={{
-                        background: `color-mix(in oklch, ${accent} 35%, transparent)`,
-                        color: "white",
-                        border: `1px solid color-mix(in oklch, ${accent} 50%, transparent)`
+                        background: `color-mix(in oklch, ${accent} 15%, transparent)`,
+                        color: accent,
+                        border: `1px solid color-mix(in oklch, ${accent} 30%, transparent)`
                       }}
                     >
                       <span className="opacity-70">#</span>
-                      <span className="truncate max-w-[120px]">{block.category || "no-topic"}</span>
+                      <span className="truncate max-w-[120px]">{block.category || t.noTopic}</span>
                     </span>
 
                     {block.influencedBy && block.influencedBy.length > 0 && (
@@ -776,13 +782,13 @@ export const TileCard = memo(function TileCard({
                         >
                           <Sparkles className="h-2.5 w-2.5 text-primary" />
                           <span className="font-mono text-[9px] font-bold text-primary uppercase tracking-tighter">
-                            {block.influencedBy.length} {block.influencedBy.length === 1 ? 'Link' : 'Links'}
+                            {block.influencedBy.length} {block.influencedBy.length === 1 ? t.linkText : t.linksText}
                           </span>
                         </div>
 
                         {/* Hover Tooltip */}
-                        <div className="absolute bottom-full left-0 mb-2 w-56 p-2 rounded-sm bg-black/90 backdrop-blur-md border border-white/10 shadow-xl opacity-0 translate-y-2 pointer-events-none group-hover/influences:opacity-100 group-hover/influences:translate-y-0 transition-all z-[100]">
-                          <h5 className="font-mono text-[8px] font-bold text-muted-foreground uppercase tracking-widest mb-1.5 border-b border-white/5 pb-1">Connected nodes</h5>
+                        <div className="absolute bottom-full left-0 mb-2 w-56 p-2 rounded-sm bg-popover/90 backdrop-blur-md border border-border shadow-xl opacity-0 translate-y-2 pointer-events-none group-hover/influences:opacity-100 group-hover/influences:translate-y-0 transition-all z-[100]">
+                          <h5 className="font-mono text-[8px] font-bold text-muted-foreground uppercase tracking-widest mb-1.5 border-b border-border/40 pb-1">{t.connectedNodes}</h5>
                           <div className="flex flex-col gap-1">
                             {block.influencedBy.slice(0, 5).map((id, i) => {
                               const linked = allBlocks?.find(b => b.id === id)
@@ -796,7 +802,7 @@ export const TileCard = memo(function TileCard({
                               )
                             })}
                             {block.influencedBy.length > 5 && (
-                              <span className="font-mono text-[8px] text-muted-foreground/50 mt-1">+{block.influencedBy.length - 5} more</span>
+                              <span className="font-mono text-[8px] text-muted-foreground/50 mt-1">+{block.influencedBy.length - 5} {t.more}</span>
                             )}
                           </div>
                         </div>
@@ -919,7 +925,7 @@ function renderBody(
     case "thesis":
       return (
         <div className="flex flex-col gap-4">
-          <p className="text-lg font-medium leading-relaxed tracking-tight text-foreground prose-invert">
+          <p className="text-lg font-medium leading-relaxed tracking-tight text-foreground dark:prose-invert">
             {linkifyText(text)}
           </p>
           <div className="h-px w-full bg-gradient-to-r from-transparent via-primary/20 to-transparent" />

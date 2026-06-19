@@ -6,6 +6,9 @@ import { CONTENT_TYPE_CONFIG } from "@/lib/content-types"
 import type { TextBlock } from "@/components/tile-card"
 import { GraphDetailPanel } from "./graph-detail-panel"
 import { useModKey } from "@/lib/utils"
+import { translations } from "@/lib/translations"
+import type { ContentType } from "@/lib/content-types"
+
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -33,6 +36,11 @@ interface GraphAreaProps {
   onEditAnnotation: (id: string, annotation: string) => void
   highlightedBlockId?: string | null
   onHighlight?: (id: string | null) => void
+  workspaces?: { id: string; name: string }[]
+  activeWorkspaceId?: string
+  onMoveToWorkspace?: (blockId: string, targetWorkspaceId: string) => void
+  onCopyToWorkspace?: (blockId: string, targetWorkspaceId: string) => void
+  language?: "en" | "pt-BR"
 }
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -183,6 +191,11 @@ export function GraphArea({
   onEditAnnotation,
   highlightedBlockId,
   onHighlight,
+  workspaces,
+  activeWorkspaceId,
+  onMoveToWorkspace,
+  onCopyToWorkspace,
+  language,
 }: GraphAreaProps) {
   const mod = useModKey()
   const containerRef = React.useRef<HTMLDivElement>(null)
@@ -198,6 +211,7 @@ export function GraphArea({
   const [hoveredId,  setHoveredId]  = React.useState<string | null>(null)
   const [tooltip,    setTooltip]    = React.useState<{ id: string; x: number; y: number } | null>(null)
   const [transform,  setTransform]  = React.useState({ x: 0, y: 0, k: 1 })
+  const t = translations[language || "en"]
 
   const isPanning   = React.useRef(false)
   const didPan      = React.useRef(false)
@@ -400,16 +414,16 @@ export function GraphArea({
         {blocks.length === 0 && (
           <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
             <div className="flex flex-col items-center gap-8 w-[420px]">
-              <p className="font-mono text-[10px] uppercase tracking-[0.35em] text-foreground/35">force-directed graph view</p>
+              <p className="font-mono text-[10px] uppercase tracking-[0.35em] text-foreground/35">{t.forceDirectedGraph}</p>
 
               <div className="flex flex-col gap-5 w-full">
-                {([
-                  { color: "var(--type-claim)",    label: "claim",    text: "Caffeine improves short-term recall by ~15%" },
-                  { color: "var(--type-entity)",   label: "entity",   text: "Adam Grant — organisational psychologist" },
-                  { color: "var(--type-question)", label: "question", text: "Does creativity require periods of solitude?" },
-                  { color: "var(--type-idea)",     label: "idea",     text: "Collaboration refines ideas, solitude generates them" },
-                ] as const).map(({ color, label, text }) => (
-                  <div key={label} className="flex items-start gap-4">
+                {[
+                  { color: "var(--type-claim)",    label: t.typeClaim,    text: t.promptClaim },
+                  { color: "var(--type-entity)",   label: t.typeEntity,   text: t.promptEntity },
+                  { color: "var(--type-question)", label: t.typeQuestion, text: t.promptQuestionAlt },
+                  { color: "var(--type-idea)",     label: t.typeIdea,     text: t.promptIdeaAlt },
+                ].map(({ color, label, text }) => (
+                  <div key={color} className="flex items-start gap-4">
                     <div className="w-0.5 self-stretch rounded-full shrink-0 mt-0.5" style={{ background: color }} />
                     <div className="flex flex-col gap-1">
                       <span className="font-mono text-[10px] uppercase tracking-[0.2em]" style={{ color }}>{label}</span>
@@ -419,8 +433,8 @@ export function GraphArea({
                 ))}
               </div>
 
-              <p className="text-[13px] text-white uppercase tracking-[0.15em] whitespace-nowrap">
-                {`type anything · #type to classify · ${mod}K for commands`}
+              <p className="text-[13px] text-foreground uppercase tracking-[0.15em] whitespace-nowrap">
+                {t.emptyHint.replace("{mod}", mod)}
               </p>
             </div>
           </div>
@@ -468,7 +482,7 @@ export function GraphArea({
             dominantBaseline="central"
             fontSize={Math.max(11, 11 * tk)}
             fontFamily="monospace"
-            fill="white"
+            fill="currentColor"
             fillOpacity={Math.max(0, 0.06 - (nodesRef.current.length * 0.002))}
             style={{ pointerEvents: "none", userSelect: "none", letterSpacing: "0.08em" }}
           >
@@ -498,7 +512,7 @@ export function GraphArea({
                   <path
                     key={i}
                     d={d}
-                    stroke="white"
+                    stroke="currentColor"
                     strokeWidth={isSynth ? 0.5 : highlighted ? 2 : 1.2}
                     strokeDasharray={isSynth ? "3 7" : undefined}
                     strokeOpacity={
@@ -701,7 +715,7 @@ export function GraphArea({
               style={{ left: tipX, top: tipY, transform: "translateY(-100%)" }}
             >
               <div
-                className="rounded-sm shadow-[0_4px_24px_rgba(0,0,0,0.55)] border border-white/10 overflow-hidden"
+                className="rounded-sm shadow-[0_4px_24px_rgba(0,0,0,0.25)] border border-border overflow-hidden"
                 style={{ minWidth: 190, maxWidth: 300 }}
               >
                 <div className="flex items-center gap-2 px-2.5 py-1.5" style={{ background: accent }}>
@@ -710,16 +724,16 @@ export function GraphArea({
                     style: { color: "black", opacity: 0.7 },
                   })}
                   <span className="font-mono text-[9px] font-black uppercase tracking-widest text-black/70">
-                    {node.isSynthesis ? "Synthesis" : config?.label}
+                    {node.isSynthesis ? t.synthesisTitle : (node.block ? (t[`type${node.block.contentType.charAt(0).toUpperCase() + node.block.contentType.slice(1)}` as keyof typeof t] || config?.label) : "")}
                   </span>
                   {node.block?.category && (
                     <span className="ml-auto font-mono text-[8px] text-black/50 truncate max-w-[90px]">
-                      {node.block.category}
+                      {node.block.category === "General" ? (language === "pt-BR" ? "Geral" : "General") : (node.block.category === "Tasks" ? (language === "pt-BR" ? "Tarefas" : "Tasks") : node.block.category)}
                     </span>
                   )}
                   {node.degree > 0 && (
                     <span className="ml-auto font-mono text-[8px] text-black/40">
-                      {node.degree} link{node.degree !== 1 ? "s" : ""}
+                      {node.degree} {node.degree === 1 ? t.linkText : t.linksText}
                     </span>
                   )}
                 </div>
@@ -728,7 +742,7 @@ export function GraphArea({
                 </div>
               </div>
               <div
-                className="mx-4 h-2 w-2 rotate-45 border-b border-r border-white/10 bg-card/95"
+                className="mx-4 h-2 w-2 rotate-45 border-b border-r border-border/40 bg-card/95"
                 style={{ marginTop: -1 }}
               />
             </div>
@@ -738,23 +752,27 @@ export function GraphArea({
         {/* ── Legend: centrality explanation ───────────────────────────── */}
         {blocks.length > 2 && (
           <div className="absolute bottom-4 right-4 pointer-events-none flex flex-col items-end gap-1">
-            <span className="font-mono text-[7.5px] text-muted-foreground/20 uppercase tracking-widest">centre = most connected</span>
-            <span className="font-mono text-[7.5px] text-muted-foreground/20 uppercase tracking-widest">edge = isolated</span>
+            <span className="font-mono text-[7.5px] text-muted-foreground/20 uppercase tracking-widest">
+              {language === "pt-BR" ? "centro = mais conectado" : "centre = most connected"}
+            </span>
+            <span className="font-mono text-[7.5px] text-muted-foreground/20 uppercase tracking-widest">
+              {language === "pt-BR" ? "borda = isolado" : "edge = isolated"}
+            </span>
           </div>
         )}
 
         {/* ── Hints ─────────────────────────────────────────────────────── */}
         <div className="absolute bottom-4 left-4 pointer-events-none">
           <span className="font-mono text-[8px] text-muted-foreground/22 uppercase tracking-widest">
-            scroll to zoom · drag to pan · drag node to reposition
+            {language === "pt-BR" ? "rolar para zoom · arrastar para mover tela · arrastar nó para reposicionar" : "scroll to zoom · drag to pan · drag node to reposition"}
           </span>
         </div>
 
         {blocks.length > 0 && (
           <div className="absolute top-4 left-4 pointer-events-none">
             <span className="font-mono text-[8px] text-muted-foreground/22 uppercase tracking-widest">
-              {blocks.length} node{blocks.length !== 1 ? "s" : ""}
-              {ghostNote ? " · synthesis active" : ""}
+              {blocks.length} {blocks.length === 1 ? t.nodeCount : t.nodesCount}
+              {ghostNote ? (language === "pt-BR" ? " · síntese ativa" : " · synthesis active") : ""}
             </span>
           </div>
         )}
@@ -774,6 +792,7 @@ export function GraphArea({
             onTogglePin={onTogglePin}
             onEdit={onEdit}
             onEditAnnotation={onEditAnnotation}
+            language={language}
           />
         </div>
       )}

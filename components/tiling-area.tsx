@@ -5,6 +5,8 @@ import { TileCard, type TextBlock } from "@/components/tile-card"
 import { CONTENT_TYPE_CONFIG, type ContentType } from "@/lib/content-types"
 import { getRelatedIds, useModKey } from "@/lib/utils"
 import { TilingMinimap } from "./tiling-minimap"
+import { translations } from "@/lib/translations"
+
 
 /** Number of tiles per BSP page */
 const PAGE_SIZE = 7
@@ -56,6 +58,7 @@ interface TilingAreaProps {
   activeWorkspaceId?: string
   onMoveToWorkspace?: (blockId: string, targetWorkspaceId: string) => void
   onCopyToWorkspace?: (blockId: string, targetWorkspaceId: string) => void
+  language?: "en" | "pt-BR"
 }
 
 export function TilingArea({
@@ -76,12 +79,14 @@ export function TilingArea({
   activeWorkspaceId,
   onMoveToWorkspace,
   onCopyToWorkspace,
+  language,
 }: TilingAreaProps) {
   const mod = useModKey()
   const scrollContainerRef = useRef<HTMLDivElement>(null)
   const [activePageIdx, setActivePageIdx] = useState(0)
   const [hoveredConnectionId, setHoveredConnectionId] = useState<string | null>(null)
   const [lockedConnectionId, setLockedConnectionId] = useState<string | null>(null)
+  const t = translations[language || "en"]
 
   const activeConnectionId = lockedConnectionId ?? hoveredConnectionId
 
@@ -217,6 +222,7 @@ export function TilingArea({
               activeWorkspaceId={activeWorkspaceId}
               onMoveToWorkspace={onMoveToWorkspace}
               onCopyToWorkspace={onCopyToWorkspace}
+              language={language}
             />
           </div>
         </div>
@@ -242,7 +248,7 @@ export function TilingArea({
   }
 
   return (
-    <div className="relative flex h-full w-full flex-col overflow-hidden bg-[#020202]">
+    <div className="relative flex h-full w-full flex-col overflow-hidden bg-background">
       {/* Task Header stays sticky at top */}
       {taskBlock && (
         <div className={`w-full shrink-0 p-1 z-10 transition-[opacity,filter] duration-300 ${activeConnectionId && !relatedIds.has(taskBlock.id) ? 'opacity-15 saturate-0' : 'opacity-100'}`}>
@@ -268,6 +274,7 @@ export function TilingArea({
               activeWorkspaceId={activeWorkspaceId}
               onMoveToWorkspace={onMoveToWorkspace}
               onCopyToWorkspace={onCopyToWorkspace}
+              language={language}
             />
         </div>
       )}
@@ -291,7 +298,7 @@ export function TilingArea({
                 <div
                   key={idx}
                   data-page-idx={idx}
-                  className={`flex w-full ${heightClass} border-b border-white/5 last:border-0`}
+                  className={`flex w-full ${heightClass} border-b border-border/40 last:border-0`}
                 >
                   {renderBSPNode(tree, chunkedPages[idx])}
                 </div>
@@ -305,16 +312,16 @@ export function TilingArea({
       {pageTrees.length === 0 && !taskBlock && (
         <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
           <div className="flex flex-col items-center gap-8 w-[420px]">
-            <p className="font-mono text-[10px] uppercase tracking-[0.35em] text-foreground/35">spatial research workspace</p>
+            <p className="font-mono text-[10px] uppercase tracking-[0.35em] text-foreground/35">{t.spatialWorkspace}</p>
 
             <div className="flex flex-col gap-5 w-full">
-              {([
-                { color: "var(--type-question)", label: "question", text: "Does consciousness require a period of genuine solitude?" },
-                { color: "var(--type-claim)",    label: "claim",    text: "Caffeine improves short-term recall by ~15%" },
-                { color: "var(--type-quote)",    label: "quote",    text: "Attention is the rarest form of generosity — Simone Weil" },
-                { color: "var(--type-task)",     label: "task",     text: "Review papers on distributed consensus" },
-              ] as const).map(({ color, label, text }) => (
-                <div key={label} className="flex items-start gap-4">
+              {[
+                { color: "var(--type-question)", label: t.typeQuestion, text: t.promptQuestion },
+                { color: "var(--type-claim)",    label: t.typeClaim,    text: t.promptClaim },
+                { color: "var(--type-quote)",    label: t.typeQuote,    text: t.promptQuote },
+                { color: "var(--type-task)",     label: t.typeTask,     text: t.promptTask },
+              ].map(({ color, label, text }) => (
+                <div key={color} className="flex items-start gap-4">
                   <div className="w-0.5 self-stretch rounded-full shrink-0 mt-0.5" style={{ background: color }} />
                   <div className="flex flex-col gap-1">
                     <span className="font-mono text-[10px] uppercase tracking-[0.2em]" style={{ color }}>{label}</span>
@@ -325,8 +332,8 @@ export function TilingArea({
             </div>
 
 
-            <p className="text-[13px] text-white uppercase tracking-[0.15em] whitespace-nowrap">
-              {`type anything · #type to classify · ${mod}K for commands`}
+            <p className="text-[13px] text-foreground uppercase tracking-[0.15em] whitespace-nowrap">
+              {t.emptyHint.replace("{mod}", mod)}
             </p>
           </div>
         </div>

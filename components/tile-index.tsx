@@ -4,6 +4,7 @@ import { useMemo } from "react"
 import { TextBlock } from "@/components/tile-card"
 import { X, LayoutList, CheckSquare, Sparkles, HelpCircle, FileText } from "lucide-react"
 import { CONTENT_TYPE_CONFIG, type ContentType } from "@/lib/content-types"
+import { translations } from "@/lib/translations"
 
 interface TileIndexProps {
   blocks: TextBlock[]
@@ -12,9 +13,11 @@ interface TileIndexProps {
   onClose?: () => void
   isOpen: boolean
   viewMode: "tiling" | "kanban" | "graph"
+  language?: "en" | "pt-BR"
 }
 
-export function TileIndex({ blocks, onHighlight, highlightedId, onClose, isOpen, viewMode }: TileIndexProps) {
+export function TileIndex({ blocks, onHighlight, highlightedId, onClose, isOpen, viewMode, language }: TileIndexProps) {
+  const t = translations[language || "en"]
   const getIcon = (type: string) => {
     switch (type) {
       case "task": return <CheckSquare className="h-3 w-3 text-indigo-400" />
@@ -28,12 +31,17 @@ export function TileIndex({ blocks, onHighlight, highlightedId, onClose, isOpen,
   const categories = useMemo(() => {
     const cats: Record<string, TextBlock[]> = {}
     blocks.forEach(b => {
-      const cat = b.category || "General"
+      let cat = b.category || (language === "pt-BR" ? "Geral" : "General")
+      if (cat === "General") {
+        cat = language === "pt-BR" ? "Geral" : "General"
+      } else if (cat === "Tasks") {
+        cat = language === "pt-BR" ? "Tarefas" : "Tasks"
+      }
       if (!cats[cat]) cats[cat] = []
       cats[cat].push(b)
     })
     return Object.entries(cats).sort((a, b) => a[0].localeCompare(b[0]))
-  }, [blocks])
+  }, [blocks, language])
 
   // KANBAN MODE: Derived columns for direct board jumping
   const kanbanColumns = useMemo(() => {
@@ -72,7 +80,7 @@ export function TileIndex({ blocks, onHighlight, highlightedId, onClose, isOpen,
         opacity: isOpen ? 1 : 0,
         visibility: isOpen ? "visible" : "hidden"
       }}
-      className="flex flex-col h-full bg-black/20 backdrop-blur-3xl border-l border-border shrink-0 overflow-hidden relative z-50 transition-all duration-200 ease-in-out"
+      className="flex flex-col h-full bg-sidebar/50 backdrop-blur-3xl border-l border-border shrink-0 overflow-hidden relative z-50 transition-all duration-200 ease-in-out"
     >
       <div className="w-[240px] flex flex-col h-full">
         {/* Header */}
@@ -80,8 +88,8 @@ export function TileIndex({ blocks, onHighlight, highlightedId, onClose, isOpen,
           {onClose && (
             <button 
               onClick={onClose}
-              className="p-1 px-1.5 hover:bg-white/5 rounded-sm transition-colors text-muted-foreground/30 hover:text-white"
-              title="Close Index"
+              className="p-1 px-1.5 hover:bg-secondary/50 rounded-sm transition-colors text-muted-foreground hover:text-foreground"
+              title={t.kbdClose.charAt(0).toUpperCase() + t.kbdClose.slice(1)}
             >
               <X className="h-3.5 w-3.5" />
             </button>
@@ -89,7 +97,7 @@ export function TileIndex({ blocks, onHighlight, highlightedId, onClose, isOpen,
           
           <div className="flex items-center gap-2.5">
             <h3 className="font-mono text-xs font-bold uppercase tracking-tight text-foreground/80 select-none text-right">
-              {viewMode === "kanban" ? "Board Index" : "Canvas Index"}
+              {viewMode === "kanban" ? t.boardIndex : t.canvasIndex}
             </h3>
             <div className="flex items-center justify-center h-5 w-5 bg-primary/10 rounded-sm transition-colors group-hover:bg-primary/20 scale-x-[-1]">
               <LayoutList className="h-3.5 w-3.5 text-primary" />
@@ -100,17 +108,21 @@ export function TileIndex({ blocks, onHighlight, highlightedId, onClose, isOpen,
         <div className="flex-1 overflow-y-auto custom-scrollbar py-2 px-2 space-y-4">
           {viewMode === "kanban" ? (
             <div className="space-y-1">
-               <h4 className="px-2.5 text-[8px] font-mono font-bold text-muted-foreground/50 uppercase tracking-widest mb-2">Columns</h4>
-               {kanbanColumns.map(col => (
-                 <button
-                    key={col.id}
-                    onClick={() => scrollToColumn(col.id)}
-                    className="flex items-center gap-2.5 w-full px-2.5 py-2.5 rounded-sm transition-all hover:bg-white/5 text-left text-foreground/60 hover:text-foreground group"
-                 >
-                   <col.icon className="h-3 w-3 text-primary/40 group-hover:text-primary transition-colors" />
-                   <span className="font-mono text-[11px] font-bold uppercase tracking-tight">{col.label}</span>
-                 </button>
-               ))}
+               <h4 className="px-2.5 text-[8px] font-mono font-bold text-muted-foreground/50 uppercase tracking-widest mb-2">{t.columns}</h4>
+               {kanbanColumns.map(col => {
+                 const typeKey = `type${col.id.charAt(0).toUpperCase() + col.id.slice(1)}` as keyof typeof t
+                 const displayColLabel = t[typeKey] || col.label
+                 return (
+                   <button
+                      key={col.id}
+                      onClick={() => scrollToColumn(col.id)}
+                      className="flex items-center gap-2.5 w-full px-2.5 py-2.5 rounded-sm transition-all hover:bg-secondary/50 text-left text-foreground/60 hover:text-foreground group"
+                   >
+                     <col.icon className="h-3 w-3 text-primary/40 group-hover:text-primary transition-colors" />
+                     <span className="font-mono text-[11px] font-bold uppercase tracking-tight">{displayColLabel}</span>
+                   </button>
+                 )
+               })}
             </div>
           ) : (
             categories.map(([cat, catBlocks]) => (
@@ -122,9 +134,9 @@ export function TileIndex({ blocks, onHighlight, highlightedId, onClose, isOpen,
                     onMouseEnter={() => onHighlight(block.id)}
                     onMouseLeave={() => onHighlight(null)}
                     onClick={() => scrollToTile(block.id)}
-                    className={`flex items-start gap-2.5 w-full px-2.5 py-2 rounded-sm transition-all hover:bg-white/5 text-left group border-r-2 ${
+                    className={`flex items-start gap-2.5 w-full px-2.5 py-2 rounded-sm transition-all hover:bg-secondary/50 text-left group border-r-2 ${
                       highlightedId === block.id 
-                        ? "bg-primary/10 border-primary shadow-[inset_0_1px_0px_rgba(255,255,255,0.05)]" 
+                        ? "bg-primary/10 border-primary" 
                         : "border-transparent text-foreground/60 hover:text-foreground"
                     }`}
                   >
@@ -132,7 +144,7 @@ export function TileIndex({ blocks, onHighlight, highlightedId, onClose, isOpen,
                       {getIcon(block.contentType)}
                     </div>
                     <span className="font-mono text-[10px] font-bold truncate leading-tight">
-                      {block.text.substring(0, 35) || "Empty note"}
+                      {block.text.substring(0, 35) || t.emptyNote}
                     </span>
                   </button>
                 ))}

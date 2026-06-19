@@ -5,6 +5,7 @@ import { AnimatePresence, motion } from "framer-motion"
 import { CONTENT_TYPE_CONFIG } from "@/lib/content-types"
 import type { TextBlock } from "@/components/tile-card"
 import { AboutPanel } from "@/components/about-panel"
+import { translations } from "@/lib/translations"
 
 import { Menu, LayoutList, Sparkles } from "lucide-react"
 
@@ -22,6 +23,7 @@ interface StatusBarProps {
   modelLabel?: string
   showHelpTooltip?: boolean
   onHelpTooltipDismiss?: () => void
+  language?: "en" | "pt-BR"
 }
 
 export function StatusBar({
@@ -38,9 +40,11 @@ export function StatusBar({
   modelLabel,
   showHelpTooltip,
   onHelpTooltipDismiss,
+  language,
 }: StatusBarProps) {
   const [time, setTime] = useState("")
   const [isAboutOpen, setIsAboutOpen] = useState(false)
+  const t = translations[language || "en"]
 
   const activity = useMemo(() => {
     return {
@@ -108,14 +112,14 @@ export function StatusBar({
         {blockCount > 0 && (
           <div className="flex items-center gap-4">
             <span className="font-mono text-[9px] text-muted-foreground/40 font-bold uppercase tracking-wider">
-              {blockCount} {blockCount === 1 ? 'node' : 'nodes'}
+              {blockCount} {blockCount === 1 ? t.nodeCount : t.nodesCount}
             </span>
             
             {activity.enriching > 0 && (
               <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-sm bg-primary/10 border border-primary/20">
                 <span className="h-1 w-1 animate-pulse rounded-full bg-primary" />
                 <span className="font-mono text-[10px] text-primary">
-                  {activity.enriching} {blocks.length > activity.enriching ? "contextualizing..." : "processing..."}
+                  {activity.enriching} {blocks.length > activity.enriching ? t.contextualizing : t.processing}
                 </span>
               </div>
             )}
@@ -124,7 +128,7 @@ export function StatusBar({
               <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-sm bg-destructive/10">
                 <span className="h-1.5 w-1.5 rounded-full bg-destructive" />
                 <span className="font-mono text-[10px] text-destructive font-bold">
-                  {activity.errors} failed
+                  {activity.errors} {t.failed}
                 </span>
               </div>
             )}
@@ -138,13 +142,15 @@ export function StatusBar({
                       CONTENT_TYPE_CONFIG[
                         type as keyof typeof CONTENT_TYPE_CONFIG
                       ]
+                    const typeKey = `type${type.charAt(0).toUpperCase() + type.slice(1)}` as keyof typeof t
+                    const displayLabel = t[typeKey] || config.label
                     return (
                       <span
                         key={type}
                         className="font-mono text-[9px] font-bold uppercase tracking-tighter"
                         style={{ color: config.accentVar }}
                       >
-                        {count} {config.label}
+                        {count} {displayLabel}
                       </span>
                     )
                   })}
@@ -153,7 +159,7 @@ export function StatusBar({
             )}
           </div>
         )}
-        <div className="flex items-center gap-2 border-l border-white/5 pl-4 ml-4">
+        <div className="flex items-center gap-2 border-l border-border pl-4 ml-4">
           {/* Model indicator */}
           {modelLabel && (
             <span className="font-mono text-[9px] text-muted-foreground/60 uppercase tracking-wider px-1.5">
@@ -171,7 +177,7 @@ export function StatusBar({
                 ? "bg-primary/20 text-primary shadow-[inset_0_1px_2px_rgba(0,0,0,0.2)]"
                 : "hover:bg-secondary text-muted-foreground/50 hover:text-foreground"
             }`}
-            title="Synthesis Panel"
+            title={t.synthesisPanel}
           >
             <Sparkles className="h-4 w-4" />
             {ghostNoteCount > 0 && !isGhostPanelOpen && (
@@ -187,7 +193,7 @@ export function StatusBar({
                 ? "bg-primary/20 text-primary shadow-[inset_0_1px_2px_rgba(0,0,0,0.2)]"
                 : "hover:bg-secondary text-muted-foreground/50 hover:text-foreground"
             }`}
-            title="Workspace Index"
+            title={t.workspaceIndex}
           >
             <LayoutList className="h-4 w-4" />
           </button>
@@ -201,7 +207,7 @@ export function StatusBar({
                 onHelpTooltipDismiss?.()
               }}
               className="p-1.5 rounded-sm transition-all duration-200 hover:bg-secondary text-muted-foreground/40 hover:text-foreground"
-              title="About nodepad"
+              title={t.aboutNodepad}
             >
               <span className="font-mono text-[11px] font-black leading-none">?</span>
             </button>
@@ -220,7 +226,7 @@ export function StatusBar({
                   <div className="absolute -top-1.5 right-2.5 w-3 h-3 rotate-45 bg-primary rounded-[2px]" />
                   <div className="relative px-3 py-2.5">
                     <p className="text-[11px] font-medium leading-snug">
-                      Find help &amp; the intro video here anytime
+                      {t.helpTooltip}
                     </p>
                   </div>
                 </motion.div>
@@ -230,7 +236,7 @@ export function StatusBar({
         </div>
       </div>
 
-      <AboutPanel open={isAboutOpen} onClose={() => setIsAboutOpen(false)} />
+      <AboutPanel open={isAboutOpen} onClose={() => setIsAboutOpen(false)} language={language} />
     </header>
   )
 }

@@ -1,7 +1,9 @@
 "use client"
 
+import * as React from "react"
 import { AnimatePresence, motion } from "framer-motion"
 import { Check, Sparkles, X } from "lucide-react"
+import { translations } from "@/lib/translations"
 
 export interface GhostNote {
   id: string
@@ -16,9 +18,11 @@ interface GhostPanelProps {
   onClose: () => void
   onClaim: (id: string) => void
   onDismiss: (id: string) => void
+  language?: "en" | "pt-BR"
 }
 
-export function GhostPanel({ ghostNotes, isOpen, onClose, onClaim, onDismiss }: GhostPanelProps) {
+export function GhostPanel({ ghostNotes, isOpen, onClose, onClaim, onDismiss, language }: GhostPanelProps) {
+  const t = translations[language || "en"]
   return (
     <div
       style={{
@@ -26,7 +30,7 @@ export function GhostPanel({ ghostNotes, isOpen, onClose, onClaim, onDismiss }: 
         opacity: isOpen ? 1 : 0,
         visibility: isOpen ? "visible" : "hidden",
       }}
-      className="flex flex-col h-full bg-black/20 backdrop-blur-3xl border-l border-border shrink-0 overflow-hidden relative z-50 transition-all duration-200 ease-in-out"
+      className="flex flex-col h-full bg-sidebar/50 backdrop-blur-3xl border-l border-border shrink-0 overflow-hidden relative z-50 transition-all duration-200 ease-in-out"
     >
       <div className="w-[272px] flex flex-col h-full">
         {/* Header */}
@@ -36,7 +40,7 @@ export function GhostPanel({ ghostNotes, isOpen, onClose, onClaim, onDismiss }: 
               <Sparkles className="h-3.5 w-3.5 text-primary" />
             </div>
             <h3 className="font-mono text-xs font-bold uppercase tracking-tight text-foreground/80 select-none">
-              Synthesis
+              {t.synthesisTitle}
             </h3>
             {ghostNotes.length > 0 && (
               <span className="font-mono text-[9px] bg-primary/20 text-primary px-1.5 py-0.5 rounded-sm font-bold tabular-nums">
@@ -46,7 +50,7 @@ export function GhostPanel({ ghostNotes, isOpen, onClose, onClaim, onDismiss }: 
           </div>
           <button
             onClick={onClose}
-            className="p-1 px-1.5 hover:bg-white/5 rounded-sm transition-colors text-muted-foreground/30 hover:text-white"
+            className="p-1 px-1.5 hover:bg-secondary/50 rounded-sm transition-colors text-muted-foreground hover:text-foreground"
           >
             <X className="h-3.5 w-3.5" />
           </button>
@@ -58,7 +62,12 @@ export function GhostPanel({ ghostNotes, isOpen, onClose, onClaim, onDismiss }: 
             <div className="flex flex-col items-center justify-center h-32 gap-3 opacity-25">
               <Sparkles className="h-5 w-5" />
               <p className="font-mono text-[9px] uppercase tracking-[0.2em] text-center leading-relaxed">
-                Emergent theses<br />will appear here
+                {t.emergentTheses.split("\n").map((line, idx) => (
+                  <React.Fragment key={idx}>
+                    {line}
+                    {idx === 0 && <br />}
+                  </React.Fragment>
+                ))}
               </p>
             </div>
           ) : (
@@ -101,7 +110,7 @@ export function GhostPanel({ ghostNotes, isOpen, onClose, onClaim, onDismiss }: 
                         <div className="h-1 w-1 animate-bounce rounded-full bg-primary/40" />
                       </div>
                       <p className="font-mono text-[9px] uppercase tracking-[0.15em] text-muted-foreground/40">
-                        Synthesizing...
+                        {t.synthesizing}
                       </p>
                     </div>
                   ) : (
@@ -117,7 +126,7 @@ export function GhostPanel({ ghostNotes, isOpen, onClose, onClaim, onDismiss }: 
                       className="flex items-center gap-1.5 w-full justify-center rounded-sm bg-primary/15 hover:bg-primary/25 px-2.5 py-1.5 font-mono text-[9px] font-black uppercase tracking-wider text-primary transition-colors"
                     >
                       <Check className="h-3 w-3 stroke-[3px]" />
-                      Add to canvas
+                      {t.addToCanvas}
                     </button>
                   )}
                 </motion.div>
@@ -129,7 +138,7 @@ export function GhostPanel({ ghostNotes, isOpen, onClose, onClaim, onDismiss }: 
         {/* Footer */}
         <div className="border-t border-border/30 px-3 py-2 shrink-0">
           <p className="font-mono text-[8px] text-muted-foreground/20 uppercase tracking-[0.15em] text-center">
-            Generated from your writing patterns
+            {t.writingPatternsHint}
           </p>
         </div>
       </div>
