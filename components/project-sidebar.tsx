@@ -181,7 +181,19 @@ export function ProjectSidebar({
 
   const currentPreset = getPreset(draft.provider)
   const models = getModelsForProvider(draft.provider)
-  const selectedModel = models.find(m => m.id === draft.modelId) || models[0] || undefined
+  const selectedModel = models.find(m => m.id === draft.modelId) || (() => {
+    const fetched = fetchedModels.find(m => m.id === draft.modelId)
+    if (fetched) {
+      return {
+        id: fetched.id,
+        label: fetched.name || fetched.id,
+        shortLabel: fetched.name || fetched.id.split("/").pop() || fetched.id,
+        description: fetched.description || (draft.language === "pt-BR" ? "Modelo personalizado" : "Custom model"),
+        supportsGrounding: false,
+      }
+    }
+    return undefined
+  })()
 
   return (
     <div
